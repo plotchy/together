@@ -1,5 +1,5 @@
 // =============================================================================
-// DWRCasts Backend Constants
+// Together Backend Constants
 // =============================================================================
 // This file contains all constants used throughout the backend to enable
 // easy tuning and configuration from a single location.
@@ -8,47 +8,53 @@
 // CONTRACT ADDRESSES
 // =============================================================================
 
-/// DWR Casts contract address on Base mainnet
-pub const DWR_CASTS_CONTRACT_ADDRESS: &str = "0x1108F177596f7A2a913ABf6C208FACEf152C3d8c";
-
-/// Farcaster Collectible Casts contract address on Base mainnet  
-pub const FARCASTER_COLLECTIBLE_CASTS_CONTRACT_ADDRESS: &str = "0xc011Ec7Ca575D4f0a2eDA595107aB104c7Af7A09";
-
-/// Farcaster Pro OG contract address
-pub const FARCASTER_PRO_OG_CONTRACT_ADDRESS: &str = "0x61886e7d61f4086ada1829880af440aa0de3fc96";
+/// Together contract address on Worldchain mainnet
+pub const TOGETHER_CONTRACT_ADDRESS: &str = "0x31Cd4ACefD4F51753344Ec4AD72AC6766Cb180E6";
 
 // =============================================================================
 // BLOCKCHAIN CONFIGURATION
 // =============================================================================
 
-/// Base mainnet chain ID
-pub const BASE_MAINNET_CHAIN_ID: u64 = 8453;
+/// Worldchain mainnet chain ID
+pub const WORLDCHAIN_MAINNET_CHAIN_ID: u64 = 480;
 
-/// DWR's Farcaster ID (for cast validation)
-pub const DWR_FARCASTER_FID: i64 = 3;
 
 // =============================================================================
 // EVENT TOPICS (for blockchain event watching)
 // =============================================================================
+/// EIP712DomainChanged() event topic
+pub const EIP712_DOMAIN_CHANGED_TOPIC: &str = "0x0a6387c9ea3628b88a633bb4f3b151770f70085117a15f9bf3787cda53f13d31";
 
-/// AuctionStarted event topic
-pub const AUCTION_STARTED_TOPIC: &str = "0xff806b81f0835f88057555bc17fb31912ff47d1cf9240f611693dcebb314d322";
+/// Initialized(uint64) event topic
+pub const INITIALIZED_TOPIC: &str = "0xc7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2";
 
-/// AuctionSettled event topic  
-pub const AUCTION_SETTLED_TOPIC: &str = "0x16702db8515cd96559fff387e936d2e1d3d73133dcc6eb4d9ca8eed1aa6e2844";
+/// OwnershipTransferred(address,address) event topic
+pub const OWNERSHIP_TRANSFERRED_TOPIC: &str = "0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0";
 
-/// PresaleClaimed event topic
-pub const PRESALE_CLAIMED_TOPIC: &str = "0xe0270c82313d232e67828d1d32f511c912186a68279bff9f57b2325d4840c91a";
+/// SignerAllowed(address) event topic
+pub const SIGNER_ALLOWED_TOPIC: &str = "0x2188e0ab4ed4b0fc2d8abb578afcaeae3688a524211cfe172e2d0079ad9bcbe7";
+
+/// SignerDenied(address) event topic
+pub const SIGNER_DENIED_TOPIC: &str = "0xca9c03a81524e5ee920d2d3b97297404e45d8ab8f5bd22ebeb1bbe079a427df1";
+
+/// TogetherEvent(address,address,uint256) event topic
+pub const TOGETHER_EVENT_TOPIC: &str = "0xd996368b8a5e10ee4a90327ea0189598b821abd2e031403b29ad5a4f90f99ca4";
+
+/// Upgraded(address) event topic
+pub const UPGRADED_TOPIC: &str = "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b";
+
+/// UserTogetherCountUpdated(address,uint256) event topic
+pub const USER_TOGETHER_COUNT_UPDATED_TOPIC: &str = "0x074abe9c54a849285ed05fef2b25d336a525cedfbffc74362d1d4742465c8261";
 
 // =============================================================================
 // BLOCKCHAIN WATCHER CONFIGURATION
 // =============================================================================
 
-/// Starting block for auction watcher
-pub const AUCTION_WATCHER_START_BLOCK: u64 = 33200642; // 0x1FA9A02
+/// Starting block for attestation watcher
+pub const ATTESTATION_WATCHER_START_BLOCK: u64 = 19791116; // 0x12DFD0C
 
 /// How often to fetch new blocks for auction watcher
-pub const AUCTION_WATCHER_FETCH_INTERVAL_SECS: u64 = 30;
+pub const ATTESTATION_WATCHER_FETCH_INTERVAL_SECS: u64 = 30;
 
 /// Initial chunk size for blockchain scanning
 pub const INITIAL_CHUNK_SIZE: u64 = 500;
@@ -63,17 +69,17 @@ pub const MAX_CHUNK_SIZE: u64 = 4000;
 pub const REFRESH_LATEST_BLOCK_EVERY_N_ITERS: usize = 10;
 
 /// Watcher ID for auction watcher
-pub const AUCTION_WATCHER_ID: &str = "auction_watcher";
+pub const ATTESTATION_WATCHER_ID: &str = "attestation_watcher";
 
 // =============================================================================
 // EIP712 CONFIGURATION
 // =============================================================================
 
-/// EIP712 domain name for wrapping signatures
-pub const WRAP_DOMAIN_NAME: &str = "DWRCasts";
+/// EIP712 domain name for together signatures
+pub const TOGETHER_DOMAIN_NAME: &str = "Together";
 
-/// EIP712 domain version for wrapping signatures
-pub const WRAP_DOMAIN_VERSION: &str = "1";
+/// EIP712 domain version for together signatures
+pub const TOGETHER_DOMAIN_VERSION: &str = "1";
 
 /// Signature deadline duration in minutes
 pub const SIGNATURE_DEADLINE_MINUTES: i64 = 3;
@@ -89,49 +95,11 @@ pub const ALCHEMY_RATE_LIMIT_PER_MINUTE: u32 = 10;
 pub const RATE_LIMIT_WINDOW_SECONDS: u64 = 60;
 
 // =============================================================================
-// NFT API LIMITS
-// =============================================================================
-
-/// Maximum NFTs to fetch per request for DWRCasts
-pub const MAX_DWRCASTS_PER_REQUEST: u32 = 100;
-
-/// Maximum NFTs to fetch per request for Farcaster Collectible Casts
-pub const MAX_FARCASTER_COLLECTIBLES_PER_REQUEST: u32 = 300;
-
-/// Default page size for Alchemy API requests
-pub const ALCHEMY_DEFAULT_PAGE_SIZE: u32 = 100;
-
-/// Maximum total NFTs to return to frontend
-pub const MAX_NFTS_TOTAL_RETURN: u32 = 1000;
-
-// =============================================================================
-// PRESALE CONFIGURATION
-// =============================================================================
-
-/// Maximum total supply available for presale
-pub const MAX_PRESALE_SUPPLY: i64 = 5300;
-
-/// Maximum NFTs one address can purchase during presale
-pub const MAX_PRESALE_NFTS_PER_ADDRESS: i64 = 250;
-
-/// Minimum quantity for presale purchase
-pub const MIN_PRESALE_QUANTITY: u32 = 1;
-
-/// Maximum quantity for single presale purchase (same as address limit)
-pub const MAX_PRESALE_QUANTITY: u32 = 250;
-
-/// How long (in minutes) to hold designated NFTs before expiring them
-pub const PRESALE_DESIGNATION_EXPIRY_MINUTES: i64 = 10;
-
-// =============================================================================
 // DATABASE CONFIGURATION
 // =============================================================================
 
 /// Default chunk size for blockchain watcher operations
 pub const DEFAULT_WATCHER_CHUNK_SIZE: i64 = 500;
-
-/// Maximum character limit for description in metadata
-pub const DESCRIPTION_CHAR_LIMIT: usize = 400;
 
 // =============================================================================
 // ADDRESS VALIDATION

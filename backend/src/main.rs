@@ -2,7 +2,7 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use dwrcasts::{handlers, utils, Config, get_db_pool};
+use together::{handlers, utils, Config, get_db_pool};
 use sqlx::PgPool;
 use tower_http::cors::{CorsLayer, Any};
 use axum::http::{Method, HeaderValue};
@@ -12,11 +12,11 @@ async fn main() -> anyhow::Result<()> {
     utils::init_logging();
     
     let config = Config::from_env()?;
-    let db_config = dwrcasts::db::DatabaseConfig::from_env()?;
+    let db_config = together::db::DatabaseConfig::from_env()?;
     let pool = get_db_pool(&db_config).await?;
     
     // Run migrations
-    dwrcasts::db::migrations::run_migrations(&pool).await?;
+    together::db::migrations::run_migrations(&pool).await?;
     
     let port = config.port;
     let app = create_router(pool, config);
@@ -35,8 +35,14 @@ fn create_router(pool: PgPool, config: Config) -> Router {
     
     Router::new()
         .route("/health", get(health_check))
-        // Together endpoint
-        .route("/api/together", post(handlers::together_cast))
+        
+        // Profile endpoints
+        .route("/api/profile/:address", get(handlers::get_profile))
+        .route("/api/check-together/:address", get(handlers::check_together))
+        
+        // Attestation endpoints
+        .route("/api/attest", post(handlers::attest_together))
+        
         // RPC proxy endpoint
         .route("/api/rpc", post(handlers::proxy_rpc))
         .layer(cors_layer)

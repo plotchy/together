@@ -1,8 +1,8 @@
 use anyhow::Result;
 use chrono::Utc;
 use clap::{Arg, Command};
-use dwrcasts::db::{get_db_pool, DatabaseConfig};
-use dwrcasts::utils::config::Config;
+use together::db::{get_db_pool, DatabaseConfig};
+use together::utils::config::Config;
 use sqlx::{PgPool, Row};
 use std::env;
 use std::fs;

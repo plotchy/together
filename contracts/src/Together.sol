@@ -19,10 +19,10 @@ contract Together is OwnableUpgradeable, UUPSUpgradeable, EIP712Upgradeable {
     error DeadlineExpired(); // Signature deadline has passed
     error NonceAlreadyUsed(); // Nonce has already been used
 
-    event SignerAllowed(address account);
-    event SignerDenied(address account);
-    event TogetherEvent(address onBehalfOf, address togetherWith, uint256 timestamp);
-    event UserTogetherCountUpdated(address account, uint256 togetherCount);
+    event SignerAllowed(address indexed account);
+    event SignerDenied(address indexed account);
+    event TogetherEvent(address indexed onBehalfOf, address indexed togetherWith, uint256 indexed timestamp);
+    event UserTogetherCountUpdated(address indexed account, uint256 indexed togetherCount);
 
     struct TogetherEventData {
         address onBehalfOf;

@@ -1,3 +1,3 @@
 pub mod attestations;
 
-pub use attestations::Attestation;
+pub use attestations::{TogetherAttestation, TogetherCount, UserProfile, ConnectionInfo};

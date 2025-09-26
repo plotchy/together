@@ -23,7 +23,7 @@ contract TogetherTest is Test {
     Together public togetherProxy;
 
     address initialOwner = 0x50c4DBD5115860484A9c693Db3483ec66a1de940;
-    address notOwner = 0x60c4DBD5115860484A9c693Db3483ec66a1de940;
+    address notOwner = 0x60c4dbD5115860484a9c693DB3483ec66a1De940;
     address backendSigner = 0x3EA5a4cc2b2F178F7Efb11aa7F13A1bAF60c7d47;
 
     function setUp() public {
