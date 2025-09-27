@@ -66,7 +66,7 @@ pub const MIN_CHUNK_SIZE: u64 = 125;
 pub const MAX_CHUNK_SIZE: u64 = 4000;
 
 /// How often to refresh latest block number
-pub const REFRESH_LATEST_BLOCK_EVERY_N_ITERS: usize = 10;
+pub const REFRESH_LATEST_BLOCK_EVERY_N_ITERS: usize = 2;
 
 /// Watcher ID for auction watcher
 pub const ATTESTATION_WATCHER_ID: &str = "attestation_watcher";

@@ -81,8 +81,11 @@ async fn run_attestation_watcher(
             watcher_state.chunk_size
         );
         
-        // Only fetch latest block periodically to reduce RPC calls
-        let current_latest = if iter_count % REFRESH_LATEST_BLOCK_EVERY_N_ITERS == 0 {
+        // Fetch latest block when caught up, or periodically when behind
+        let blocks_behind = latest_known_block.saturating_sub(watcher_state.last_processed_block);
+        let should_refresh = blocks_behind <= watcher_state.chunk_size || iter_count % REFRESH_LATEST_BLOCK_EVERY_N_ITERS == 0;
+        
+        let current_latest = if should_refresh {
             match get_latest_block(&provider).await {
                 Ok(latest) => {
                     latest_known_block = latest;
@@ -216,12 +219,12 @@ async fn process_together_log(pool: &PgPool, log: &Log) -> Result<()> {
 }
 
 fn parse_together_event(log: &Log) -> Result<TogetherEvent> {
-    // TogetherEvent(address indexed onBehalfOf, address indexed togetherWith, uint256 timestamp)
-    if log.topics().len() != 3 {
-        return Err(anyhow::anyhow!("Invalid Together event: expected 3 topics, got {}", log.topics().len()));
+    // TogetherEvent(address indexed onBehalfOf, address indexed togetherWith, uint256 indexed timestamp)
+    if log.topics().len() != 4 {
+        return Err(anyhow::anyhow!("Invalid Together event: expected 4 topics, got {}", log.topics().len()));
     }
     
-    // Extract addresses from topics (32 bytes, last 20 are the address)
+    // Extract addresses and timestamp from topics (32 bytes, last 20 are the address for address topics)
     let topics = log.topics();
     let address_1_bytes = &topics[1].as_slice()[12..32];
     let address_2_bytes = &topics[2].as_slice()[12..32];
@@ -230,12 +233,6 @@ fn parse_together_event(log: &Log) -> Result<TogetherEvent> {
     
     let address_1 = format!("0x{}", hex::encode(address_1_bytes));
     let address_2 = format!("0x{}", hex::encode(address_2_bytes));
-    
-    // Extract timestamp from data (should be 32 bytes representing a uint256)
-    let data = log.data();
-    if data.data.len() != 32 {
-        return Err(anyhow::anyhow!("Invalid Together event data: expected 32 bytes, got {}", data.data.len()));
-    }
     
     let tx_hash = log.transaction_hash
         .ok_or_else(|| anyhow::anyhow!("Missing transaction hash"))?
