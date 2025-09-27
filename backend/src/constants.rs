@@ -9,7 +9,7 @@
 // =============================================================================
 
 /// Together contract address on Worldchain mainnet
-pub const TOGETHER_CONTRACT_ADDRESS: &str = "0x31Cd4ACefD4F51753344Ec4AD72AC6766Cb180E6";
+pub const TOGETHER_CONTRACT_ADDRESS: &str = "0x0053E5F890d5cE67048C86eCCf6051A92Ab34b4b";
 
 // =============================================================================
 // BLOCKCHAIN CONFIGURATION

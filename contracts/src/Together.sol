@@ -67,7 +67,7 @@ contract Together is OwnableUpgradeable, UUPSUpgradeable, EIP712Upgradeable {
 
     /// @notice EIP-712 type hash for wrap data
     bytes32 public constant TOGETHER_TYPEHASH = keccak256(
-        "TogetherData(address onBehalfOf,address togetherWith,uint256 timestamp)"
+        "TogetherData(address onBehalfOf,address togetherWith,uint256 timestamp,bytes32 nonce,uint256 deadline)"
     );
 
     constructor() {
@@ -75,6 +75,7 @@ contract Together is OwnableUpgradeable, UUPSUpgradeable, EIP712Upgradeable {
     }
 
     function initialize(address _owner) external initializer {
+        __EIP712_init("Together", "1");
         __Ownable_init(_owner);
     }
 
@@ -91,7 +92,6 @@ contract Together is OwnableUpgradeable, UUPSUpgradeable, EIP712Upgradeable {
 
 
         */
-        if (!signers[msg.sender]) revert Unauthorized();
         
         // Verify signature first
         _verifyTogetherSignature(onBehalfOf, togetherWith, timestamp, authData);

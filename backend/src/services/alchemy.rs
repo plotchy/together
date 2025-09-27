@@ -8,39 +8,6 @@ use tokio::sync::Mutex;
 use alloy::primitives::U256;
 use crate::constants::*;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AlchemyNft {
-    #[serde(rename = "contractAddress")]
-    pub contract_address: String,
-    #[serde(rename = "tokenId")]
-    pub token_id: String,
-    pub balance: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AlchemyNftsResponse {
-    #[serde(rename = "ownedNfts")]
-    pub owned_nfts: Vec<AlchemyNft>,
-    #[serde(rename = "totalCount")]
-    pub total_count: u32,
-    #[serde(rename = "pageKey")]
-    pub page_key: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ContractTokenPair {
-    pub contract_address: String,
-    pub token_id_decimal: String,
-    pub token_id_hex: String,
-    pub balance: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub image_url: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub metadata_url: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub author: Option<String>, // For filtering dwr.eth casts
-}
-
 // Rate limiting structure
 #[derive(Debug)]
 struct RateLimiter {
@@ -87,7 +54,7 @@ impl AlchemyService {
         Self {
             client: Client::new(),
             api_key,
-            base_url: "https://base-mainnet.g.alchemy.com/nft/v3".to_string(),
+            base_url: "https://worldchain-mainnet.g.alchemy.com/nft/v3".to_string(),
             rate_limiter: Arc::new(Mutex::new(RateLimiter::new(ALCHEMY_RATE_LIMIT_PER_MINUTE))),
         }
     }

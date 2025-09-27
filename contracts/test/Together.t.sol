@@ -11,9 +11,9 @@ import {ECDSA} from "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.s
 
 /*
 
-forge test --mc TogetherTest -vvvvvvv
+forge test --mc TogetherTest -vvvvvvv --fork-url $FORK_RPC_URL
 
-forge test --mc TogetherTest --mt test_end_to_end_together -vvvvvvv
+forge test --mc TogetherTest --mt test_end_to_end_together -vvvvvvv --fork-url $FORK_RPC_URL
 
 
 */
@@ -25,23 +25,27 @@ contract TogetherTest is Test {
     address initialOwner = 0x50c4DBD5115860484A9c693Db3483ec66a1de940;
     address notOwner = 0x60c4dbD5115860484a9c693DB3483ec66a1De940;
     address backendSigner = 0x3EA5a4cc2b2F178F7Efb11aa7F13A1bAF60c7d47;
+    address real_proxy = 0x0053E5F890d5cE67048C86eCCf6051A92Ab34b4b;
 
     function setUp() public {
-        vm.startPrank(initialOwner);
-        // deploy implementation
-        togetherImpl = new Together();
+        // vm.startPrank(initialOwner);
+        // // deploy implementation
+        // togetherImpl = new Together();
 
-        // initialize call
-        bytes memory initializeData = abi.encodeWithSelector(Together.initialize.selector, initialOwner);
+        // // initialize call
+        // bytes memory initializeData = abi.encodeWithSelector(Together.initialize.selector, initialOwner);
 
-        // this calls the `upgradeToAndCall` function through the proxy on the impl.
-        ERC1967Proxy proxy = new ERC1967Proxy(address(togetherImpl), initializeData);
-        togetherProxy = Together(address(proxy));
+        // // this calls the `upgradeToAndCall` function through the proxy on the impl.
+        // ERC1967Proxy proxy = new ERC1967Proxy(address(togetherImpl), initializeData);
+
+        // togetherProxy = Together(address(proxy));
 
         // set signer
-        togetherProxy.allowSigner(backendSigner);
+        // togetherProxy.allowSigner(backendSigner);
 
-        vm.stopPrank();
+        // vm.stopPrank();
+
+        togetherProxy = Together(address(real_proxy));
     }
 
     /*
@@ -125,9 +129,11 @@ contract TogetherTest is Test {
         address userB = 0x59888BE579194C701F16a9425f57ECce3906AF4b; // another user
         
         // Test data
-        uint256 timestamp = block.timestamp;
-        uint256 futureDeadline = block.timestamp + 3600; // 1 hour from now
-        bytes32 testNonce = 0x1111111111111111111111111111111111111111111111111111111111111111;
+        uint256 timestamp = 1758989464;
+        uint256 futureDeadline = 1850000000;
+        uint nonce = 15438945231642159389809464667825054380435997955418741871927677867721750618658;
+        // bytes32 testNonce = 0x1111111111111111111111111111111111111111111111111111111111111111;
+        bytes32 testNonce = bytes32(nonce);
         
         console.log("=== End-to-End Together Test ===");
         console.log("User A:", userA);
@@ -138,7 +144,7 @@ contract TogetherTest is Test {
         
         // TODO: Generate proper EIP-712 signature using backend signer
         // For now, we'll use a placeholder signature - this needs to be generated properly
-        bytes memory togetherSignature = hex"0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+        bytes memory togetherSignature = hex"427b7b4e11d8ecc0014375e5a826d96a4e869da8a1156bf8357f271ca38d83852d9763c1b28283fc0ff64d48952355443eea36bf11cd60c3a3f0fc1f3447cdcf1b";
         
         // Step 1: Backend signer is already authorized in setUp()
         console.log("Backend signer authorized:", togetherProxy.signers(backendSigner));
@@ -160,16 +166,15 @@ contract TogetherTest is Test {
         // Step 4: Call together function (backend signer calls it)
         console.log("=== Executing Together Transaction ===");
         
-        // NOTE: This will fail until we generate a proper signature
-        // For now, we'll expect it to revert due to signature verification
-        vm.prank(backendSigner);
-        vm.expectRevert(); // Expect revert due to invalid signature
-        togetherProxy.together(userA, userB, timestamp, authData);
+        // // NOTE: This will fail until we generate a proper signature
+        // // For now, we'll expect it to revert due to signature verification
+        // vm.prank(backendSigner);
+        // vm.expectRevert(); // Expect revert due to invalid signature
+        // togetherProxy.together(userA, userB, timestamp, authData);
         
-        console.log("Together transaction correctly reverted due to invalid signature");
+        // console.log("Together transaction correctly reverted due to invalid signature");
         
         // TODO: Once we have proper signature generation, uncomment this:
-        /*
         try togetherProxy.together(userA, userB, timestamp, authData) {
             console.log("Together transaction SUCCESS!");
             
@@ -200,7 +205,6 @@ contract TogetherTest is Test {
             console.log("Together transaction FAILED with unknown error");
             revert("Together transaction failed with unknown error");
         }
-        */
         
         console.log("=== END-TO-END TEST COMPLETED ===");
         console.log("Test framework ready - need to implement proper EIP-712 signature generation");

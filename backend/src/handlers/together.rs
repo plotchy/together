@@ -16,6 +16,10 @@ pub struct AttestTogetherRequest {
     pub partner_address: String, 
     pub timestamp: i64,
     pub password: String,
+    pub my_username: Option<String>,
+    pub partner_username: Option<String>,
+    pub my_profile_picture_url: Option<String>,
+    pub partner_profile_picture_url: Option<String>,
 }
 
 // Response with signature for on-chain attestation
@@ -34,6 +38,10 @@ pub struct SubmitAttestationRequest {
     pub timestamp: i64,
     pub tx_hash: Option<String>,
     pub block_number: Option<i64>,
+    pub username_1: Option<String>,
+    pub username_2: Option<String>,
+    pub profile_picture_url_1: Option<String>,
+    pub profile_picture_url_2: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -47,6 +55,8 @@ pub struct SubmitAttestationResponse {
 pub struct ProfileQuery {
     #[serde(default)]
     pub limit: Option<i64>,
+    pub username: Option<String>,
+    pub profile_picture_url: Option<String>,
 }
 
 // Query parameters for checking if two addresses have been together
@@ -74,6 +84,18 @@ pub async fn get_profile(
                 error: "Invalid wallet address format".to_string(),
             }),
         ))?;
+
+    // Cache username if provided in query params (from frontend when user visits their own profile)
+    if params.username.is_some() || params.profile_picture_url.is_some() {
+        if let Err(e) = attestations::upsert_username_cache(
+            &pool,
+            &address,
+            params.username.as_deref(),
+            params.profile_picture_url.as_deref(),
+        ).await {
+            tracing::warn!("Failed to cache username for {}: {}", address, e);
+        }
+    }
 
     let profile = attestations::get_user_profile(&pool, &address, params.limit).await
         .map_err(|e| {
@@ -199,6 +221,29 @@ pub async fn attest_together(
         }),
     ))?;
 
+    // Cache usernames if provided
+    if req.my_username.is_some() || req.my_profile_picture_url.is_some() {
+        if let Err(e) = attestations::upsert_username_cache(
+            &pool,
+            &req.my_address,
+            req.my_username.as_deref(),
+            req.my_profile_picture_url.as_deref(),
+        ).await {
+            tracing::warn!("Failed to cache username for {}: {}", req.my_address, e);
+        }
+    }
+
+    if req.partner_username.is_some() || req.partner_profile_picture_url.is_some() {
+        if let Err(e) = attestations::upsert_username_cache(
+            &pool,
+            &req.partner_address,
+            req.partner_username.as_deref(),
+            req.partner_profile_picture_url.as_deref(),
+        ).await {
+            tracing::warn!("Failed to cache username for {}: {}", req.partner_address, e);
+        }
+    }
+
     Ok(Json(AttestTogetherResponse {
         signature: signature_data.signature,
         nonce: nonce.to_string(),
@@ -245,6 +290,29 @@ pub async fn submit_attestation(
             }),
         )
     })?;
+
+    // Cache usernames if provided
+    if req.username_1.is_some() || req.profile_picture_url_1.is_some() {
+        if let Err(e) = attestations::upsert_username_cache(
+            &pool,
+            &req.address_1,
+            req.username_1.as_deref(),
+            req.profile_picture_url_1.as_deref(),
+        ).await {
+            tracing::warn!("Failed to cache username for {}: {}", req.address_1, e);
+        }
+    }
+
+    if req.username_2.is_some() || req.profile_picture_url_2.is_some() {
+        if let Err(e) = attestations::upsert_username_cache(
+            &pool,
+            &req.address_2,
+            req.username_2.as_deref(),
+            req.profile_picture_url_2.as_deref(),
+        ).await {
+            tracing::warn!("Failed to cache username for {}: {}", req.address_2, e);
+        }
+    }
 
     tracing::info!(
         "Successfully inserted attestation for {} and {} at timestamp {}",

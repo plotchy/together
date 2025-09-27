@@ -163,8 +163,8 @@ mod tests {
             .expect("PRIVATE_KEY_SIGNER must be set in .env file");
         
         // Get contract address from environment  
-        let contract_address: Address = env::var("DWRCASTS_CONTRACT_ADDRESS")
-            .expect("DWRCASTS_CONTRACT_ADDRESS must be set in .env file")
+        let contract_address: Address = env::var("TOGETHER_CONTRACT_ADDRESS")
+            .expect("TOGETHER_CONTRACT_ADDRESS must be set in .env file")
             .parse()
             .expect("Invalid contract address format");
 
@@ -175,7 +175,7 @@ mod tests {
         // Real test data for end-to-end test with Plotchy wallet
         let plotchy_wallet: Address = "0xAefC770D8515C552C952a30e597d9fbEa99aA756".parse().unwrap();
         let together_with: Address = "0x59888BE579194C701F16a9425f57ECce3906AF4b".parse().unwrap();
-        let timestamp = U256::from_str_radix("1727337600", 10).unwrap();
+        let timestamp = U256::from_str_radix("1758989464", 10).unwrap(); // Sat Sep 27 2025 13:31:04 GMT-0700
         let nonce = U256::from_str_radix("2222222222222222222222222222222222222222222222222222222222222222", 16).unwrap();
         let deadline = 1850000000; // Wed Aug 16 2028
 

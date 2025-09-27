@@ -2,5 +2,4 @@ pub mod contract;
 pub mod alchemy;
 
 pub use contract::ContractService;
-pub use alchemy::{AlchemyService, ContractTokenPair};
-
+pub use alchemy::AlchemyService;

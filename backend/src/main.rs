@@ -37,8 +37,8 @@ fn create_router(pool: PgPool, config: Config) -> Router {
         .route("/health", get(health_check))
         
         // Profile endpoints
-        .route("/api/profile/:address", get(handlers::get_profile))
-        .route("/api/check-together/:address", get(handlers::check_together))
+        .route("/api/profile/{address}", get(handlers::get_profile))
+        .route("/api/check-together/{address}", get(handlers::check_together))
         
         // Attestation endpoints
         .route("/api/attest", post(handlers::attest_together))

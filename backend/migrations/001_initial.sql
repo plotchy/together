@@ -28,6 +28,16 @@ CREATE TABLE watcher_state (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Username cache table for quick username lookups
+CREATE TABLE username_cache (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    address VARCHAR(42) UNIQUE NOT NULL, -- wallet address
+    username VARCHAR(255), -- ENS-compatible username, nullable in case we have address but no username yet
+    profile_picture_url TEXT, -- optional profile picture URL
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- Indexes for fast queries
 CREATE INDEX idx_together_attestations_address_1 ON together_attestations(address_1);
 CREATE INDEX idx_together_attestations_address_2 ON together_attestations(address_2);
@@ -46,6 +56,11 @@ CREATE INDEX idx_watcher_state_updated_at ON watcher_state(updated_at);
 CREATE INDEX idx_watcher_state_last_processed_block ON watcher_state(last_processed_block);
 CREATE INDEX idx_watcher_state_chunk_size ON watcher_state(chunk_size);
 
+-- Username cache indexes
+CREATE UNIQUE INDEX idx_username_cache_address ON username_cache(address);
+CREATE INDEX idx_username_cache_username ON username_cache(username) WHERE username IS NOT NULL;
+CREATE INDEX idx_username_cache_updated_at ON username_cache(updated_at);
+
 -- Trigger to update updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -60,3 +75,4 @@ CREATE TRIGGER update_together_counts_updated_at BEFORE UPDATE ON together_count
 CREATE TRIGGER update_watcher_state_updated_at BEFORE UPDATE ON watcher_state FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_watcher_state_last_processed_block BEFORE UPDATE ON watcher_state FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_watcher_state_chunk_size BEFORE UPDATE ON watcher_state FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_username_cache_updated_at BEFORE UPDATE ON username_cache FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

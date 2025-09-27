@@ -1,6 +1,6 @@
 use anyhow::Result;
 use sqlx::PgPool;
-use crate::models::attestations::{TogetherAttestation, UserProfile, ConnectionInfo};
+use crate::models::attestations::{TogetherAttestation, UserProfile, ConnectionInfo, UsernameCache};
 
 /// Insert a new together attestation
 pub async fn insert_attestation(
@@ -81,20 +81,30 @@ pub async fn get_together_count(pool: &PgPool, address: &str) -> Result<i64> {
 pub async fn get_user_profile(pool: &PgPool, address: &str, limit: Option<i64>) -> Result<UserProfile> {
     let total_connections = get_together_count(pool, address).await?;
     
+    // Get user's own username
+    let user_cache = get_username_cache(pool, address).await?;
+    
     let limit = limit.unwrap_or(50); // Default to 50 recent connections
     
     let recent_connections = sqlx::query_as::<_, ConnectionInfo>(
         r#"
         SELECT 
             CASE 
-                WHEN LOWER(address_1) = LOWER($1) THEN address_2
-                ELSE address_1
+                WHEN LOWER(ta.address_1) = LOWER($1) THEN ta.address_2
+                ELSE ta.address_1
             END as partner_address,
-            attestation_timestamp,
-            tx_hash
-        FROM together_attestations
-        WHERE LOWER(address_1) = LOWER($1) OR LOWER(address_2) = LOWER($1)
-        ORDER BY attestation_timestamp DESC
+            ta.attestation_timestamp,
+            ta.tx_hash,
+            uc.username as partner_username
+        FROM together_attestations ta
+        LEFT JOIN username_cache uc ON (
+            CASE 
+                WHEN LOWER(ta.address_1) = LOWER($1) THEN LOWER(uc.address) = LOWER(ta.address_2)
+                ELSE LOWER(uc.address) = LOWER(ta.address_1)
+            END
+        )
+        WHERE LOWER(ta.address_1) = LOWER($1) OR LOWER(ta.address_2) = LOWER($1)
+        ORDER BY ta.attestation_timestamp DESC
         LIMIT $2
         "#
     )
@@ -105,6 +115,8 @@ pub async fn get_user_profile(pool: &PgPool, address: &str, limit: Option<i64>) 
 
     Ok(UserProfile {
         address: address.to_string(),
+        username: user_cache.as_ref().and_then(|cache| cache.username.clone()),
+        profile_picture_url: user_cache.as_ref().and_then(|cache| cache.profile_picture_url.clone()),
         total_connections,
         recent_connections,
     })
@@ -197,5 +209,75 @@ pub async fn update_watcher_state(
     .execute(pool)
     .await?;
 
+    Ok(())
+}
+
+/// Get username cache for an address
+pub async fn get_username_cache(pool: &PgPool, address: &str) -> Result<Option<UsernameCache>> {
+    let cache = sqlx::query_as::<_, UsernameCache>(
+        "SELECT * FROM username_cache WHERE LOWER(address) = LOWER($1)"
+    )
+    .bind(address)
+    .fetch_optional(pool)
+    .await?;
+
+    Ok(cache)
+}
+
+/// Upsert username cache (create or update)
+pub async fn upsert_username_cache(
+    pool: &PgPool,
+    address: &str,
+    username: Option<&str>,
+    profile_picture_url: Option<&str>,
+) -> Result<UsernameCache> {
+    let cache = sqlx::query_as::<_, UsernameCache>(
+        r#"
+        INSERT INTO username_cache (address, username, profile_picture_url)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (address) DO UPDATE SET
+            username = COALESCE($2, username_cache.username),
+            profile_picture_url = COALESCE($3, username_cache.profile_picture_url),
+            updated_at = NOW()
+        RETURNING *
+        "#
+    )
+    .bind(address)
+    .bind(username)
+    .bind(profile_picture_url)
+    .fetch_one(pool)
+    .await?;
+
+    Ok(cache)
+}
+
+/// Bulk upsert username cache for multiple addresses
+pub async fn bulk_upsert_username_cache(
+    pool: &PgPool,
+    entries: &[(String, Option<String>, Option<String>)], // (address, username, profile_picture_url)
+) -> Result<()> {
+    if entries.is_empty() {
+        return Ok(());
+    }
+
+    let mut query_builder = sqlx::QueryBuilder::new(
+        "INSERT INTO username_cache (address, username, profile_picture_url) "
+    );
+    
+    query_builder.push_values(entries, |mut b, (address, username, profile_picture_url)| {
+        b.push_bind(address)
+         .push_bind(username)
+         .push_bind(profile_picture_url);
+    });
+    
+    query_builder.push(
+        " ON CONFLICT (address) DO UPDATE SET 
+          username = COALESCE(EXCLUDED.username, username_cache.username),
+          profile_picture_url = COALESCE(EXCLUDED.profile_picture_url, username_cache.profile_picture_url),
+          updated_at = NOW()"
+    );
+
+    query_builder.build().execute(pool).await?;
+    
     Ok(())
 }

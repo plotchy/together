@@ -34,6 +34,8 @@ pub struct WatcherState {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UserProfile {
     pub address: String,
+    pub username: Option<String>,
+    pub profile_picture_url: Option<String>,
     pub total_connections: i64,
     pub recent_connections: Vec<ConnectionInfo>,
 }
@@ -43,4 +45,15 @@ pub struct ConnectionInfo {
     pub partner_address: String,
     pub attestation_timestamp: i64,
     pub tx_hash: Option<String>,
+    pub partner_username: Option<String>,
+}
+
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
+pub struct UsernameCache {
+    pub id: uuid::Uuid,
+    pub address: String,
+    pub username: Option<String>,
+    pub profile_picture_url: Option<String>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
 }
