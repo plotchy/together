@@ -36,6 +36,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy compiled binaries
 COPY --from=builder /app/target/release/server /app/bin/server
 COPY --from=builder /app/target/release/attestation_watcher /app/bin/attestation_watcher
+COPY --from=builder /app/target/release/connection_checker /app/bin/connection_checker
 COPY --from=builder /app/target/release/migrate /app/bin/migrate
 
 RUN chmod +x /app/bin/*
