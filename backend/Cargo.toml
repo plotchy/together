@@ -20,6 +20,10 @@ path = "bin/migrate.rs"
 name = "backup_db"
 path = "bin/backup_db.rs"
 
+[[bin]]
+name = "connection_checker"
+path = "bin/connection_checker.rs"
+
 [lib]
 name = "together"
 path = "src/lib.rs"

@@ -10,6 +10,8 @@ use alloy::{
 use alloy::network::TransactionBuilder;
 use serde::Deserialize;
 
+use crate::constants::WORLDCHAIN_MAINNET_CHAIN_ID;
+
 #[derive(Debug, Deserialize)]
 struct AlchemyGasPriceResponse {
     jsonrpc: String,
@@ -143,7 +145,49 @@ impl ContractService {
         Ok(block)
     }
     
-    
+    /// Submit a together transaction on behalf of users (server-side signing)
+    pub async fn submit_together_transaction_server_signed(
+        &self,
+        private_key: &str,
+        address_1: &str,
+        address_2: &str,
+        timestamp: u64,
+    ) -> Result<String> {
+        use crate::utils::eip712::Eip712Signer;
+        
+        // Parse addresses
+        let addr_1: Address = address_1.parse()?;
+        let addr_2: Address = address_2.parse()?;
+        let contract_address: Address = self.together_contract_address;
+        
+        // Generate nonce and deadline
+        let nonce = Eip712Signer::generate_nonce();
+        let deadline = Eip712Signer::generate_deadline_10_minutes();
+        
+        // Create EIP712 signer
+        let signer = Eip712Signer::new(private_key, WORLDCHAIN_MAINNET_CHAIN_ID)?; // Worldchain mainnet chain ID
+        
+        // Sign the together attestation
+        let signature_data = signer.sign_together_attestation(
+            contract_address,
+            addr_1,
+            addr_2,
+            timestamp as i64,
+            nonce,
+            deadline,
+        ).await?;
+        
+        // Submit the transaction
+        self.submit_together_transaction(
+            private_key,
+            addr_1,
+            addr_2,
+            U256::from(timestamp),
+            nonce,
+            deadline,
+            signature_data.signature,
+        ).await
+    }
     
     pub async fn submit_together_transaction(
         &self,

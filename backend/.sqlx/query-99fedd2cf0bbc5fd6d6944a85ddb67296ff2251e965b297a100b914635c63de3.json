@@ -1,0 +1,122 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT \n            p1.id as p1_id, p1.from_user_id as p1_from, p1.to_user_id as p1_to, \n            p1.created_at as p1_created_at, p1.expires_at as p1_expires_at,\n            p2.id as p2_id, p2.from_user_id as p2_from, p2.to_user_id as p2_to,\n            p2.created_at as p2_created_at, p2.expires_at as p2_expires_at,\n            u1.id as u1_id, u1.wallet_address as u1_address, \n            u1.created_at as u1_created_at, u1.updated_at as u1_updated_at,\n            u2.id as u2_id, u2.wallet_address as u2_address,\n            u2.created_at as u2_created_at, u2.updated_at as u2_updated_at\n        FROM pending_connections p1\n        JOIN pending_connections p2 ON p1.from_user_id = p2.to_user_id AND p1.to_user_id = p2.from_user_id\n        JOIN users u1 ON p1.from_user_id = u1.id\n        JOIN users u2 ON p1.to_user_id = u2.id\n        WHERE p1.expires_at > NOW() AND p2.expires_at > NOW()\n        AND p1.from_user_id < p1.to_user_id -- Avoid duplicate pairs\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "p1_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "p1_from",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "p1_to",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "p1_created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 4,
+        "name": "p1_expires_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 5,
+        "name": "p2_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 6,
+        "name": "p2_from",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 7,
+        "name": "p2_to",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 8,
+        "name": "p2_created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "p2_expires_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "u1_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 11,
+        "name": "u1_address",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 12,
+        "name": "u1_created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 13,
+        "name": "u1_updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 14,
+        "name": "u2_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 15,
+        "name": "u2_address",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 16,
+        "name": "u2_created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 17,
+        "name": "u2_updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "99fedd2cf0bbc5fd6d6944a85ddb67296ff2251e965b297a100b914635c63de3"
+}

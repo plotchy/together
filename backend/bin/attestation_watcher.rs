@@ -2,7 +2,7 @@ use together::{
     constants::*,
     db::{get_db_pool, DatabaseConfig},
     utils::{init_logging, config::Config},
-    db::attestations,
+    db::{attestations, users},
 };
 use alloy::{
     primitives::{B256, U256, Address},
@@ -203,6 +203,21 @@ async fn process_together_log(pool: &PgPool, log: &Log) -> Result<()> {
     ).await {
         Ok(attestation) => {
             info!("✅ Successfully inserted attestation with ID: {}", attestation.id);
+            
+            // Try to mark corresponding optimistic connection as processed
+            // First get users by wallet addresses
+            if let (Ok(Some(user1)), Ok(Some(user2))) = (
+                users::get_user_by_wallet_address(pool, &event.address_1).await,
+                users::get_user_by_wallet_address(pool, &event.address_2).await
+            ) {
+                if let Err(e) = users::mark_optimistic_connection_processed(pool, user1.id, user2.id).await {
+                    // This is not critical - the optimistic connection might not exist
+                    // (e.g., if this attestation was created outside our pending connection system)
+                    info!("ℹ️ Could not mark optimistic connection as processed: {}", e);
+                } else {
+                    info!("🔗 Marked optimistic connection as processed for users {} & {}", user1.id, user2.id);
+                }
+            }
         }
         Err(e) => {
             // Check if this is a duplicate (conflict)

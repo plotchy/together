@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        DELETE FROM pending_connections\n        WHERE expires_at <= NOW()\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "7ceea2996c0590e0dca5f7e8be69ecb746b7519e774840ce7f6d12c6d8024123"
+}

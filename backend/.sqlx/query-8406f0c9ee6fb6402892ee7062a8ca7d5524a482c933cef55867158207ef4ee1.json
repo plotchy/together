@@ -1,0 +1,47 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT id, user_id_1, user_id_2, processed, created_at\n        FROM optimistic_connections\n        WHERE user_id_1 = $1 AND user_id_2 = $2\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id_1",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "user_id_2",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "processed",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "8406f0c9ee6fb6402892ee7062a8ca7d5524a482c933cef55867158207ef4ee1"
+}

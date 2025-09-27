@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        DELETE FROM pending_connections\n        WHERE from_user_id = $1 AND to_user_id = $2\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4a0a9852cc1154d1b103d287f0cd77c734c545c2e9dc6d9bb9c596f4c4337f49"
+}
