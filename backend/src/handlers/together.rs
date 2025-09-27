@@ -7,6 +7,7 @@ use crate::{
     constants::*,
     models::attestations::{UserProfile, TogetherAttestation},
     db::attestations,
+    services::contract::ContractService,
 };
 
 // Request to create an attestation signature
@@ -244,6 +245,29 @@ pub async fn attest_together(
         }
     }
 
+    // Spawn background task to submit transaction to blockchain
+    let bg_config = config.clone();
+    let bg_my_address = my_address;
+    let bg_partner_address = partner_address;
+    let bg_timestamp = req.timestamp;
+    let bg_nonce = nonce;
+    let bg_deadline = deadline;
+    let bg_signature = signature_data.signature.clone();
+    
+    tokio::spawn(async move {
+        if let Err(e) = submit_together_transaction_background(
+            bg_config,
+            bg_my_address,
+            bg_partner_address,
+            bg_timestamp,
+            bg_nonce,
+            bg_deadline,
+            bg_signature,
+        ).await {
+            tracing::error!("Failed to submit together transaction in background: {}", e);
+        }
+    });
+
     Ok(Json(AttestTogetherResponse {
         signature: signature_data.signature,
         nonce: nonce.to_string(),
@@ -446,3 +470,50 @@ pub async fn submit_attestation(
 //         token_ids: req.token_ids,
 //     }))
 // }
+
+async fn submit_together_transaction_background(
+    config: Config,
+    my_address: Address,
+    partner_address: Address,
+    timestamp: i64,
+    nonce: alloy::primitives::U256,
+    deadline: u64,
+    signature: String,
+) -> anyhow::Result<()> {
+    tracing::info!(
+        "Starting background transaction submission for {} and {} at timestamp {}",
+        my_address,
+        partner_address,
+        timestamp
+    );
+
+    // Create contract service
+    let contract_service = ContractService::new(
+        config.rpc_url,
+        config.together_contract_address,
+        config.alchemy_api_key,
+    ).await?;
+
+    // Convert timestamp to U256
+    let timestamp_u256 = alloy::primitives::U256::from(timestamp as u64);
+
+    // Submit the transaction
+    let tx_hash = contract_service.submit_together_transaction(
+        &config.private_key_deployer,
+        my_address,
+        partner_address,
+        timestamp_u256,
+        nonce,
+        deadline,
+        signature,
+    ).await?;
+
+    tracing::info!(
+        "Successfully submitted together transaction with hash: {} for {} and {}",
+        tx_hash,
+        my_address,
+        partner_address
+    );
+
+    Ok(())
+}

@@ -10,6 +10,7 @@ pub struct Config {
     pub together_contract_address: String,
     pub alchemy_api_key: String,
     pub private_key_signer: String,
+    pub private_key_deployer: String,
 }
 
 impl Config {
@@ -31,6 +32,8 @@ impl Config {
                 .map_err(|_| anyhow::anyhow!("ALCHEMY_API_KEY must be set"))?,
             private_key_signer: env::var("PRIVATE_KEY_SIGNER")
                 .map_err(|_| anyhow::anyhow!("PRIVATE_KEY_SIGNER must be set"))?,
+            private_key_deployer: env::var("PRIVATE_KEY_DEPLOYER")
+                .map_err(|_| anyhow::anyhow!("PRIVATE_KEY_DEPLOYER must be set"))?,
         })
     }
 }

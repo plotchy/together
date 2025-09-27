@@ -25,15 +25,18 @@ backend will be `https://api.togetherapp.app`
 This uses the worldcoin mini-app template. It's mobile only and within this context has information about the logged in user.
 - username
 - wallet address
-`npx @worldcoin/create-mini-app@latest my-first-mini-app`
 
 Ideally we'd use Nextjs + shadcn + tailwind, but we'll prioritize using packages within the template
 
 We'll fetch the user's together data from our database
 - number of connections
 - connections to who and when
-  - include usernames of connections?
-    - maybe we can store these in db?
+  - include usernames of connections? these can be optimistic (stale is ~ok) and come from username_cache table
+
+For now, we'll have the app be pretty debug-heavy where we show their address, and then we'll have a randomly generated and shown "together-with" address, and then a "Pair" button that calls the server to attest these two were together.
+- in the future this will be a different mechanism but for now this will be good to test the backend/db/etc.
+
+
 
 ## Backend
 Rust based. Postgres.
@@ -44,7 +47,6 @@ Rust based. Postgres.
   - verifies a received attestation and if valid, sends a transaction
 - Attestation watcher
   - watches for attestations emitted, then populates the database
-
 
 ## Contracts
 

@@ -1,13 +1,9 @@
 
 # short term
 
-contracts are good, just need some real sigs to test locally
-- if those pass, deploy
-- then make test on actual contract rather than new
+have backend submit actual tx on attest
+- we'll just redeploy contracts if we want clean history
 
-backend needs schema, routers
-backend watcher can be after deploy
-backend needs local db or sqlx prepare
 
 
 
