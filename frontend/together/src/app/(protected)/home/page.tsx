@@ -7,6 +7,7 @@ import { Verify } from '@/components/Verify';
 import { ViewPermissions } from '@/components/ViewPermissions';
 import { TogetherProfile } from '@/components/TogetherProfile';
 import { CreateTogether } from '@/components/CreateTogether';
+import { PendingConnections } from '@/components/PendingConnections';
 import { ProfileProvider } from '@/contexts/ProfileContext';
 import { Marble, TopBar } from '@worldcoin/mini-apps-ui-kit-react';
 
@@ -32,6 +33,7 @@ export default async function Home() {
         <UserInfo session={session} />
         <ProfileProvider>
           <TogetherProfile session={session} />
+          <PendingConnections session={session} />
           <CreateTogether session={session} />
         </ProfileProvider>
         {/* <Verify /> */}

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Session } from 'next-auth';
 import { Marble } from '@worldcoin/mini-apps-ui-kit-react';
 import { apiClient } from '@/lib/api';
@@ -11,18 +11,37 @@ interface TogetherProfileProps {
 }
 
 export const TogetherProfile = ({ session }: TogetherProfileProps) => {
-  const { profile, setProfile } = useProfile();
+  const { profile, setProfile, user, setUser } = useProfile();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
+  const fetchData = async (isInitial = false) => {
     if (!session?.user?.walletAddress) return;
 
-    const fetchProfile = async () => {
+    if (isInitial) {
       setLoading(true);
       setError(null);
+    }
 
-      const response = await apiClient.getUserProfile(
+    try {
+      // First, get or create the user to get their ID (only on initial load)
+      if (isInitial) {
+        const userResponse = await apiClient.getOrCreateUser(session.user.walletAddress);
+        
+        if (userResponse.error) {
+          setError(userResponse.error);
+          setLoading(false);
+          return;
+        }
+
+        if (userResponse.data) {
+          setUser(userResponse.data);
+        }
+      }
+
+      // Get their profile (always refresh this)
+      const profileResponse = await apiClient.getUserProfile(
         session.user.walletAddress,
         {
           username: session.user.username,
@@ -31,15 +50,34 @@ export const TogetherProfile = ({ session }: TogetherProfileProps) => {
         }
       );
 
-      if (response.error) {
-        setError(response.error);
-      } else if (response.data) {
-        setProfile(response.data);
+      if (profileResponse.error) {
+        if (isInitial) setError(profileResponse.error);
+      } else if (profileResponse.data) {
+        setProfile(profileResponse.data);
+        if (isInitial) setError(null);
       }
-      setLoading(false);
-    };
+    } catch (err) {
+      if (isInitial) setError(err instanceof Error ? err.message : 'Unknown error');
+    }
+    
+    if (isInitial) setLoading(false);
+  };
 
-    fetchProfile();
+  useEffect(() => {
+    if (!session?.user?.walletAddress) return;
+
+    // Initial fetch
+    fetchData(true);
+
+    // Set up aggressive polling every 2 seconds for profile updates
+    intervalRef.current = setInterval(() => fetchData(false), 2000);
+
+    // Cleanup interval on unmount
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
   }, [session?.user?.walletAddress, session?.user?.username, session?.user?.profilePictureUrl]);
 
   if (loading) {
@@ -72,11 +110,22 @@ export const TogetherProfile = ({ session }: TogetherProfileProps) => {
 
   return (
     <div className="w-full space-y-4">
-      {/* Together Stats */}
+      {/* User Info and Together Stats */}
       <div className="p-4 bg-white rounded-xl border-2 border-gray-200">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-lg font-semibold">Together Stats</h2>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span className="text-xs text-gray-500">Live</span>
+          </div>
+        </div>
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold">Together Stats</h2>
+            {user && (
+              <p className="text-sm font-semibold text-blue-600 mb-1">
+                User ID: {user.id}
+              </p>
+            )}
             <p className="text-sm text-gray-600 font-mono">
               {profile.address.slice(0, 6)}...{profile.address.slice(-4)}
             </p>

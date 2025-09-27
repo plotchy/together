@@ -1,5 +1,9 @@
 import { 
   UserProfile, 
+  UserResponse,
+  CreatePendingConnectionRequest,
+  PendingConnectionResponse,
+  UserPendingConnectionsResponse,
   TogetherAttestation, 
   AttestTogetherRequest, 
   AttestTogetherResponse,
@@ -79,6 +83,27 @@ class ApiClient {
       method: 'POST',
       body: JSON.stringify(request),
     });
+  }
+
+  async getOrCreateUser(address: string): Promise<ApiResponse<UserResponse>> {
+    const endpoint = `/api/user/${address}`;
+    return this.request<UserResponse>(endpoint);
+  }
+
+  async createPendingConnection(
+    fromUserId: number,
+    request: CreatePendingConnectionRequest
+  ): Promise<ApiResponse<PendingConnectionResponse>> {
+    const endpoint = `/api/user/${fromUserId}/pending-connection`;
+    return this.request<PendingConnectionResponse>(endpoint, {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  }
+
+  async getUserPendingConnections(userId: number): Promise<ApiResponse<UserPendingConnectionsResponse>> {
+    const endpoint = `/api/user/${userId}/pending-connections`;
+    return this.request<UserPendingConnectionsResponse>(endpoint);
   }
 
   async health(): Promise<ApiResponse<string>> {

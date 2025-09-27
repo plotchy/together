@@ -50,3 +50,26 @@ export interface ApiResponse<T> {
   data?: T;
   error?: string;
 }
+
+export interface UserResponse {
+  id: number;
+  wallet_address: string;
+  created_at: string;
+}
+
+export interface CreatePendingConnectionRequest {
+  to_user_id: number;
+}
+
+export interface PendingConnectionResponse {
+  id: string;
+  from_user_id: number;
+  to_user_id: number;
+  created_at: string;
+  expires_at: string;
+}
+
+export interface UserPendingConnectionsResponse {
+  outgoing: PendingConnectionResponse[];
+  incoming: PendingConnectionResponse[];
+}

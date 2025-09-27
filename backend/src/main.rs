@@ -40,6 +40,13 @@ fn create_router(pool: PgPool, config: Config) -> Router {
         .route("/api/profile/{address}", get(handlers::get_profile))
         .route("/api/check-together/{address}", get(handlers::check_together))
         
+        // User endpoints
+        .route("/api/user/{address}", get(handlers::get_or_create_user))
+        
+        // Pending connection endpoints
+        .route("/api/user/{user_id}/pending-connection", post(handlers::create_pending_connection))
+        .route("/api/user/{user_id}/pending-connections", get(handlers::get_user_pending_connections))
+        
         // Attestation endpoints
         .route("/api/attest", post(handlers::attest_together))
         

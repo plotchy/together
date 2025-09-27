@@ -6,7 +6,7 @@ use crate::{
     utils::{Config, eip712::Eip712Signer},
     constants::*,
     models::attestations::{UserProfile, TogetherAttestation},
-    db::attestations,
+    db::{attestations, users},
     services::contract::ContractService,
 };
 
@@ -71,6 +71,33 @@ pub struct TogetherError {
     pub error: String,
 }
 
+#[derive(Debug, Serialize)]
+pub struct UserResponse {
+    pub id: i32,
+    pub wallet_address: String,
+    pub created_at: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreatePendingConnectionRequest {
+    pub to_user_id: i32,
+}
+
+#[derive(Debug, Serialize)]
+pub struct PendingConnectionResponse {
+    pub id: String,
+    pub from_user_id: i32,
+    pub to_user_id: i32,
+    pub created_at: String,
+    pub expires_at: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct UserPendingConnectionsResponse {
+    pub outgoing: Vec<PendingConnectionResponse>,
+    pub incoming: Vec<PendingConnectionResponse>,
+}
+
 /// Get user profile with their together connections
 pub async fn get_profile(
     State((pool, _config)): State<(PgPool, Config)>,
@@ -112,6 +139,38 @@ pub async fn get_profile(
     Ok(Json(profile))
 }
 
+/// Get or create user by wallet address, returning user ID
+pub async fn get_or_create_user(
+    State((pool, _config)): State<(PgPool, Config)>,
+    Path(address): Path<String>,
+) -> Result<Json<UserResponse>, (StatusCode, Json<TogetherError>)> {
+    // Validate address format
+    let _address: Address = address.parse()
+        .map_err(|_| (
+            StatusCode::BAD_REQUEST,
+            Json(TogetherError {
+                error: "Invalid wallet address format".to_string(),
+            }),
+        ))?;
+
+    let user = users::get_or_create_user(&pool, &address).await
+        .map_err(|e| {
+            tracing::error!("Failed to get or create user: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(TogetherError {
+                    error: "Failed to get or create user".to_string(),
+                }),
+            )
+        })?;
+
+    Ok(Json(UserResponse {
+        id: user.id,
+        wallet_address: user.wallet_address,
+        created_at: user.created_at.to_rfc3339(),
+    }))
+}
+
 /// Check if two addresses have been together
 pub async fn check_together(
     State((pool, _config)): State<(PgPool, Config)>,
@@ -147,6 +206,190 @@ pub async fn check_together(
         })?;
 
     Ok(Json(attestation))
+}
+
+/// Create a pending connection from one user to another
+pub async fn create_pending_connection(
+    State((pool, _config)): State<(PgPool, Config)>,
+    Path(from_user_id): Path<i32>,
+    Json(req): Json<CreatePendingConnectionRequest>,
+) -> Result<Json<PendingConnectionResponse>, (StatusCode, Json<TogetherError>)> {
+    // Validate that both users exist
+    let _from_user = users::get_user_by_id(&pool, from_user_id).await
+        .map_err(|e| {
+            tracing::error!("Failed to get from_user: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(TogetherError {
+                    error: "Failed to validate from_user".to_string(),
+                }),
+            )
+        })?
+        .ok_or_else(|| (
+            StatusCode::NOT_FOUND,
+            Json(TogetherError {
+                error: "From user not found".to_string(),
+            }),
+        ))?;
+
+    let _to_user = users::get_user_by_id(&pool, req.to_user_id).await
+        .map_err(|e| {
+            tracing::error!("Failed to get to_user: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(TogetherError {
+                    error: "Failed to validate to_user".to_string(),
+                }),
+            )
+        })?
+        .ok_or_else(|| (
+            StatusCode::NOT_FOUND,
+            Json(TogetherError {
+                error: "To user not found".to_string(),
+            }),
+        ))?;
+
+    // Prevent self-connections
+    if from_user_id == req.to_user_id {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(TogetherError {
+                error: "Cannot create connection with yourself".to_string(),
+            }),
+        ));
+    }
+
+    // Check if pending connection already exists
+    if let Some(_existing) = users::get_pending_connection(&pool, from_user_id, req.to_user_id).await
+        .map_err(|e| {
+            tracing::error!("Failed to check existing pending connection: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(TogetherError {
+                    error: "Failed to check existing pending connection".to_string(),
+                }),
+            )
+        })? {
+        return Err((
+            StatusCode::CONFLICT,
+            Json(TogetherError {
+                error: "Pending connection already exists".to_string(),
+            }),
+        ));
+    }
+
+    // Create the pending connection
+    let pending = users::create_pending_connection(&pool, from_user_id, req.to_user_id).await
+        .map_err(|e| {
+            tracing::error!("Failed to create pending connection: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(TogetherError {
+                    error: "Failed to create pending connection".to_string(),
+                }),
+            )
+        })?;
+
+    tracing::info!("Created pending connection from user {} to user {}", from_user_id, req.to_user_id);
+
+    Ok(Json(PendingConnectionResponse {
+        id: pending.id.to_string(),
+        from_user_id: pending.from_user_id,
+        to_user_id: pending.to_user_id,
+        created_at: pending.created_at.to_rfc3339(),
+        expires_at: pending.expires_at.to_rfc3339(),
+    }))
+}
+
+/// Get all pending connections for a user (both outgoing and incoming)
+pub async fn get_user_pending_connections(
+    State((pool, _config)): State<(PgPool, Config)>,
+    Path(user_id): Path<i32>,
+) -> Result<Json<UserPendingConnectionsResponse>, (StatusCode, Json<TogetherError>)> {
+    // Validate user exists
+    let _user = users::get_user_by_id(&pool, user_id).await
+        .map_err(|e| {
+            tracing::error!("Failed to get user: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(TogetherError {
+                    error: "Failed to validate user".to_string(),
+                }),
+            )
+        })?
+        .ok_or_else(|| (
+            StatusCode::NOT_FOUND,
+            Json(TogetherError {
+                error: "User not found".to_string(),
+            }),
+        ))?;
+
+    // Get outgoing pending connections (connections this user initiated)
+    let outgoing_result = sqlx::query_as!(
+        crate::models::users::PendingConnection,
+        "SELECT id, from_user_id, to_user_id, created_at, expires_at
+        FROM pending_connections
+        WHERE from_user_id = $1 AND expires_at > NOW()
+        ORDER BY created_at DESC",
+        user_id
+    )
+    .fetch_all(&pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("Failed to get outgoing pending connections: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(TogetherError {
+                error: "Failed to get outgoing pending connections".to_string(),
+            }),
+        )
+    })?;
+
+    // Get incoming pending connections (connections sent to this user)
+    let incoming_result = sqlx::query_as!(
+        crate::models::users::PendingConnection,
+        "SELECT id, from_user_id, to_user_id, created_at, expires_at
+        FROM pending_connections
+        WHERE to_user_id = $1 AND expires_at > NOW()
+        ORDER BY created_at DESC",
+        user_id
+    )
+    .fetch_all(&pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("Failed to get incoming pending connections: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(TogetherError {
+                error: "Failed to get incoming pending connections".to_string(),
+            }),
+        )
+    })?;
+
+    let outgoing: Vec<PendingConnectionResponse> = outgoing_result.into_iter().map(|p| {
+        PendingConnectionResponse {
+            id: p.id.to_string(),
+            from_user_id: p.from_user_id,
+            to_user_id: p.to_user_id,
+            created_at: p.created_at.to_rfc3339(),
+            expires_at: p.expires_at.to_rfc3339(),
+        }
+    }).collect();
+
+    let incoming: Vec<PendingConnectionResponse> = incoming_result.into_iter().map(|p| {
+        PendingConnectionResponse {
+            id: p.id.to_string(),
+            from_user_id: p.from_user_id,
+            to_user_id: p.to_user_id,
+            created_at: p.created_at.to_rfc3339(),
+            expires_at: p.expires_at.to_rfc3339(),
+        }
+    }).collect();
+
+    Ok(Json(UserPendingConnectionsResponse {
+        outgoing,
+        incoming,
+    }))
 }
 
 /// Generate a signature for attesting that two users were together

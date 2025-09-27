@@ -1,10 +1,12 @@
 'use client';
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { UserProfile, ConnectionInfo } from '@/types/api';
+import { UserProfile, UserResponse, ConnectionInfo } from '@/types/api';
 
 interface ProfileContextType {
   profile: UserProfile | null;
   setProfile: (profile: UserProfile | null) => void;
+  user: UserResponse | null;
+  setUser: (user: UserResponse | null) => void;
   addOptimisticConnection: (partnerAddress: string, partnerUsername?: string, partnerProfileUrl?: string) => void;
   clearOptimisticUpdates: () => void;
 }
@@ -25,9 +27,14 @@ interface ProfileProviderProps {
 
 export const ProfileProvider = ({ children }: ProfileProviderProps) => {
   const [profile, setProfileState] = useState<UserProfile | null>(null);
+  const [user, setUserState] = useState<UserResponse | null>(null);
 
   const setProfile = (newProfile: UserProfile | null) => {
     setProfileState(newProfile);
+  };
+
+  const setUser = (newUser: UserResponse | null) => {
+    setUserState(newUser);
   };
 
   const addOptimisticConnection = (
@@ -62,6 +69,8 @@ export const ProfileProvider = ({ children }: ProfileProviderProps) => {
       value={{
         profile,
         setProfile,
+        user,
+        setUser,
         addOptimisticConnection,
         clearOptimisticUpdates,
       }}

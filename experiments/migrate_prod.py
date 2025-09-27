@@ -86,8 +86,8 @@ def main():
     # Load environment variables
     load_dotenv()
     
-    # database_url = os.getenv('DATABASE_PUBLIC_URL')
-    database_url = os.getenv('DATABASE_URL')
+    database_url = os.getenv('DATABASE_PUBLIC_URL')
+    # database_url = os.getenv('DATABASE_URL')
     if not database_url:
         print("Error: DATABASE_PUBLIC_URL environment variable not set")
         return 1

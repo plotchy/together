@@ -11,39 +11,37 @@ interface CreateTogetherProps {
 }
 
 export const CreateTogether = ({ session }: CreateTogetherProps) => {
-  const { addOptimisticConnection } = useProfile();
-  const [partnerAddress, setPartnerAddress] = useState('');
+  const { addOptimisticConnection, user } = useProfile();
+  const [partnerUserId, setPartnerUserId] = useState('');
   const [buttonState, setButtonState] = useState<
     'pending' | 'success' | 'failed' | undefined
   >(undefined);
   const [error, setError] = useState<string | null>(null);
 
-  const generateRandomAddress = () => {
-    // Generate a random Ethereum address for testing
-    const randomHex = Array.from({ length: 40 }, () => 
-      Math.floor(Math.random() * 16).toString(16)
-    ).join('');
-    return `0x${randomHex}`;
+  const generateRandomUserId = () => {
+    // Generate a random user ID for testing (between 1 and 1000)
+    return Math.floor(Math.random() * 1000) + 1;
   };
 
-  const handleRandomAddress = () => {
-    setPartnerAddress(generateRandomAddress());
+  const handleRandomUserId = () => {
+    setPartnerUserId(generateRandomUserId().toString());
   };
 
-  const handleCreateAttestation = async () => {
-    if (!session?.user?.walletAddress || !partnerAddress) {
+  const handleCreatePendingConnection = async () => {
+    if (!user?.id || !partnerUserId) {
       setError('Missing required information');
       return;
     }
 
-    // Validate address format
-    if (!/^0x[a-fA-F0-9]{40}$/.test(partnerAddress)) {
-      setError('Invalid address format');
+    // Validate user ID format
+    const partnerUserIdNum = parseInt(partnerUserId);
+    if (isNaN(partnerUserIdNum) || partnerUserIdNum <= 0) {
+      setError('Invalid user ID format');
       return;
     }
 
-    if (partnerAddress.toLowerCase() === session.user.walletAddress.toLowerCase()) {
-      setError('Cannot create attestation with yourself');
+    if (partnerUserIdNum === user.id) {
+      setError('Cannot create connection with yourself');
       return;
     }
 
@@ -51,20 +49,9 @@ export const CreateTogether = ({ session }: CreateTogetherProps) => {
     setError(null);
 
     try {
-      // For now, we'll use a simple password. In production, this would be more secure
-      const password = 'debug-password';
-      const timestamp = Math.floor(Date.now() / 1000);
-
-      const request: AttestTogetherRequest = {
-        my_address: session.user.walletAddress,
-        partner_address: partnerAddress,
-        timestamp,
-        password,
-        my_username: session.user.username,
-        my_profile_picture_url: session.user.profilePictureUrl,
-      };
-
-      const response = await apiClient.attestTogether(request);
+      const response = await apiClient.createPendingConnection(user.id, {
+        to_user_id: partnerUserIdNum
+      });
 
       if (response.error) {
         setError(response.error);
@@ -73,19 +60,9 @@ export const CreateTogether = ({ session }: CreateTogetherProps) => {
       }
 
       if (response.data) {
-        // TODO: Use the signature to submit a transaction
-        // For now, we'll just show success
-        console.log('Attestation signature received:', response.data);
-        
-        // Optimistically update the profile with the new connection
-        addOptimisticConnection(
-          partnerAddress,
-          undefined, // We don't have partner username for random addresses
-          undefined  // We don't have partner profile picture
-        );
-        
+        console.log('Pending connection created:', response.data);
         setButtonState('success');
-        setPartnerAddress(''); // Clear the form
+        setPartnerUserId(''); // Clear the form
         
         // Reset after a delay
         setTimeout(() => {
@@ -105,33 +82,33 @@ export const CreateTogether = ({ session }: CreateTogetherProps) => {
     }
   };
 
-  if (!session?.user?.walletAddress) {
+  if (!session?.user?.walletAddress || !user) {
     return (
       <div className="w-full p-4 bg-yellow-50 rounded-xl border-2 border-yellow-200">
-        <p className="text-yellow-700 text-sm">Please sign in to create together attestations</p>
+        <p className="text-yellow-700 text-sm">Please sign in to create pending connections</p>
       </div>
     );
   }
 
   return (
     <div className="grid w-full gap-4">
-      <p className="text-lg font-semibold">Create Together</p>
+      <p className="text-lg font-semibold">Create Pending Connection</p>
       
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Partner Address
+            Partner User ID
           </label>
           <div className="flex gap-2">
             <input
               type="text"
-              value={partnerAddress}
-              onChange={(e) => setPartnerAddress(e.target.value)}
-              placeholder="0x..."
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={partnerUserId}
+              onChange={(e) => setPartnerUserId(e.target.value)}
+              placeholder="Enter user ID (e.g., 123)"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <Button
-              onClick={handleRandomAddress}
+              onClick={handleRandomUserId}
               size="sm"
               variant="tertiary"
               className="px-3"
@@ -147,30 +124,39 @@ export const CreateTogether = ({ session }: CreateTogetherProps) => {
           </div>
         )}
 
+        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-blue-700 text-sm">
+            <strong>How it works:</strong> You send a pending connection to another user. 
+            They need to send one back to you within 10 minutes to complete the connection!
+          </p>
+        </div>
+
         <LiveFeedback
           label={{
-            failed: 'Failed to create together attestation',
-            pending: 'Creating together attestation...',
-            success: 'Together attestation created!',
+            failed: 'Failed to create pending connection',
+            pending: 'Creating pending connection...',
+            success: 'Pending connection created!',
           }}
           state={buttonState}
           className="w-full"
         >
           <Button
-            onClick={handleCreateAttestation}
-            disabled={buttonState === 'pending' || !partnerAddress.trim()}
+            onClick={handleCreatePendingConnection}
+            disabled={buttonState === 'pending' || !partnerUserId.trim()}
             size="lg"
             variant="primary"
             className="w-full"
           >
-            Create Together
+            Send Connection Request
           </Button>
         </LiveFeedback>
       </div>
 
       {/* Debug Info */}
       <div className="p-3 bg-gray-50 rounded-lg">
-        <p className="text-xs text-gray-600 mb-1">Your Address:</p>
+        <p className="text-xs text-gray-600 mb-1">Your User ID:</p>
+        <p className="text-xs font-semibold text-gray-800">#{user.id}</p>
+        <p className="text-xs text-gray-600 mb-1 mt-2">Your Address:</p>
         <p className="text-xs font-mono text-gray-800">{session.user.walletAddress}</p>
       </div>
     </div>
