@@ -4,6 +4,7 @@ import { Session } from 'next-auth';
 import { apiClient } from '@/lib/api';
 import { useProfile } from '@/contexts/ProfileContext';
 import { CreateTogether } from '@/components/CreateTogether';
+import { PendingRequests } from '@/components/PendingRequests';
 import { AuthButton } from '@/components/AuthButton';
 
 interface HomeContentProps {
@@ -74,5 +75,10 @@ export const HomeContent = ({ session }: HomeContentProps) => {
   }
 
   // Show the main interface once user is loaded
-  return <CreateTogether session={session} />;
+  return (
+    <div className="w-full space-y-8">
+      <CreateTogether session={session} />
+      <PendingRequests session={session} />
+    </div>
+  );
 };
