@@ -87,23 +87,11 @@ export const CreateTogether = ({ session }: CreateTogetherProps) => {
       <div className="space-y-6">
         <div className="text-center space-y-12">
           {/* <p className="text-2xl text-gray-700 mb-20">Put your friend's ID below</p> */}
-          <p className="text-2xl text-gray-700" style={{marginBottom: '5rem'}}>Put your friend&apos;s ID below</p>
+          <p className="text-2xl text-gray-700" style={{marginBottom: '5rem'}}>Type your friend&apos;s ID below</p>
           <div className="relative">
             {/* Spinning arrows around the input */}
             <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-4xl text-red-500 animate-bounce">
               ↓
-            </div>
-            <div className="absolute -top-6 -left-8 text-3xl text-yellow-500 animate-spin" style={{animationDuration: '2s'}}>
-              ↙
-            </div>
-            <div className="absolute -top-6 -right-8 text-3xl text-green-500 animate-spin" style={{animationDuration: '3s', animationDirection: 'reverse'}}>
-              ↘
-            </div>
-            <div className="absolute top-1/2 -left-12 transform -translate-y-1/2 text-2xl text-purple-500 animate-pulse">
-              →
-            </div>
-            <div className="absolute top-1/2 -right-12 transform -translate-y-1/2 text-2xl text-pink-500 animate-pulse">
-              ←
             </div>
             <div className="absolute -bottom-8 left-1/4 text-3xl text-blue-500" style={{animation: 'bounce 1s infinite 0.5s'}}>
               ↗
@@ -118,7 +106,7 @@ export const CreateTogether = ({ session }: CreateTogetherProps) => {
                 setPartnerUserId(e.target.value);
                 setError(null); // Clear error when user types
               }}
-              placeholder="Enter your friend's ID here to pair"
+              placeholder="friend&apos;s ID here.."
               className="relative w-full px-4 py-4 border-2 border-gray-400 rounded-xl text-xl text-center text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-rainbow focus:border-transparent transition-all duration-300 hover:shadow-lg hover:scale-105 focus:shadow-xl focus:scale-105"
               style={{
                 background: 'linear-gradient(45deg, #ffffff 0%, #f8fafc 50%, #ffffff 100%)',

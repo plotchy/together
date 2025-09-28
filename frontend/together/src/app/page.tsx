@@ -62,15 +62,15 @@ export default function Home() {
           {/* Main Title */}
           <div className="space-y-6">
             <h1 className="text-6xl font-light text-gray-900">
-              Together
+              TogetherApp
             </h1>
             <p className="text-2xl text-gray-600 leading-relaxed font-light max-w-lg mx-auto">
-              World proves you&apos;re human, and we prove you&apos;re <InlineLanguageCarousel />
+              verifiably human, actually <InlineLanguageCarousel />
             </p>
           </div>
 
           {/* Features */}
-          <div className="space-y-6 max-w-lg mx-auto">
+          {/* <div className="space-y-6 max-w-lg mx-auto">
             <div className="text-center space-y-2">
               <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
                 <span className="text-xl">👥</span>
@@ -89,7 +89,7 @@ export default function Home() {
               </div>
               <p className="text-base text-gray-700 font-light">Build your verified network of real relationships</p>
             </div>
-          </div>
+          </div> */}
 
           {/* CTA */}
           <div className="pt-4">

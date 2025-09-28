@@ -162,11 +162,8 @@ export const PendingConnections = ({ session }: PendingConnectionsProps) => {
       {/* All Optimistic Connections */}
       {allOptimistic.length > 0 && (
         <div className="p-6 bg-white rounded-xl border-2 border-green-400 shadow-lg relative overflow-hidden">
-          <div className="absolute top-2 right-2 text-green-500">
-            🎉
-          </div>
           <h4 className="font-bold text-2xl text-green-700 mb-4">
-            🎊 Your Connections ({allOptimistic.length}) 🎊
+            Your Connections ({allOptimistic.length})
           </h4>
           <div className="space-y-3">
             {allOptimistic.map((connection, index) => (
@@ -179,9 +176,6 @@ export const PendingConnections = ({ session }: PendingConnectionsProps) => {
                       const otherUsername = otherUserAddress ? usernames[otherUserAddress] : null;
                       return otherUsername || `Together ID #${otherUserId}`;
                     })()}
-                  </p>
-                  <p className="text-sm text-green-600 font-medium">
-                    ✨ Connected together ✨
                   </p>
                 </div>
                 <div className="text-right">
