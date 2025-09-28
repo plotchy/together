@@ -10,10 +10,10 @@ export default async function Home() {
     <>
       <Page.Main className="flex flex-col items-center min-h-screen p-8 gap-8 bg-white">
         <div className="text-center max-w-md w-full pt-16">
-          <h1 className="text-5xl font-bold text-gray-900">
+          <h1 className="text-4xl font-bold text-gray-900">
             Welcome, {session?.user?.username}
           </h1>
-          <div className="mt-20">
+          <div className="mt-16">
             <ProfileProvider>
               <HomeContent session={session} />
             </ProfileProvider>

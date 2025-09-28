@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Session } from 'next-auth';
 import { apiClient } from '@/lib/api';
-import { UserPendingConnectionsResponse } from '@/types/api';
+import { UserPendingConnectionsResponse, UserOptimisticConnectionsResponse } from '@/types/api';
 import { useProfile } from '@/contexts/ProfileContext';
 import { getUsernamesByAddresses, formatUserDisplay } from '@/utils/username';
 
@@ -13,6 +13,7 @@ interface PendingRequestsProps {
 export const PendingRequests = ({ session }: PendingRequestsProps) => {
   const { user } = useProfile();
   const [pendingConnections, setPendingConnections] = useState<UserPendingConnectionsResponse | null>(null);
+  const [optimisticConnections, setOptimisticConnections] = useState<UserOptimisticConnectionsResponse | null>(null);
   const [usernames, setUsernames] = useState<Record<string, string | null>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,13 +27,22 @@ export const PendingRequests = ({ session }: PendingRequestsProps) => {
       if (!user?.id) return;
 
       try {
-        const pendingResponse = await apiClient.getUserPendingConnections(user.id);
+        const [pendingResponse, optimisticResponse] = await Promise.all([
+          apiClient.getUserPendingConnections(user.id),
+          apiClient.getUserOptimisticConnections(user.id)
+        ]);
         
         if (pendingResponse.error) {
           setError(pendingResponse.error);
         } else if (pendingResponse.data) {
           setPendingConnections(pendingResponse.data);
           setError(null);
+        }
+
+        if (optimisticResponse.error) {
+          console.warn('Failed to fetch optimistic connections:', optimisticResponse.error);
+        } else if (optimisticResponse.data) {
+          setOptimisticConnections(optimisticResponse.data);
         }
 
         // Collect all unique addresses for username fetching
@@ -45,6 +55,12 @@ export const PendingRequests = ({ session }: PendingRequestsProps) => {
           pendingResponse.data.incoming.forEach(conn => {
             if (conn.from_user_address) addresses.add(conn.from_user_address);
             if (conn.to_user_address) addresses.add(conn.to_user_address);
+          });
+        }
+        if (optimisticResponse.data) {
+          optimisticResponse.data.connections.forEach(conn => {
+            if (conn.user_1_address) addresses.add(conn.user_1_address);
+            if (conn.user_2_address) addresses.add(conn.user_2_address);
           });
         }
 
@@ -126,24 +142,34 @@ export const PendingRequests = ({ session }: PendingRequestsProps) => {
   }
 
   const hasAnyPending = pendingConnections.outgoing.length > 0 || pendingConnections.incoming.length > 0;
+  const latestConnection = optimisticConnections?.connections 
+    ? optimisticConnections.connections
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 1)[0]
+    : null;
 
-  if (!hasAnyPending) {
+  // Show component if there are pending requests OR a latest connection
+  if (!hasAnyPending && !latestConnection) {
     return null;
   }
+
+  // Limit to latest 3 for outgoing and incoming
+  const limitedOutgoing = pendingConnections.outgoing.slice(0, 3);
+  const limitedIncoming = pendingConnections.incoming.slice(0, 3);
 
   return (
     <div className="w-full space-y-4">
       {/* Outgoing Connections */}
-      {pendingConnections.outgoing.length > 0 && (
+      {limitedOutgoing.length > 0 && (
         <div className="p-6 bg-white rounded-xl border-2 border-blue-400 shadow-lg relative">
           <div className="absolute top-2 right-2 text-blue-500">
             📤
           </div>
           <h4 className="font-bold text-2xl text-blue-700 mb-4">
-            📨 Sent Requests ({pendingConnections.outgoing.length})
+            📨 Sent Requests ({pendingConnections.outgoing.length > 3 ? '3+' : pendingConnections.outgoing.length})
           </h4>
           <div className="space-y-3">
-            {pendingConnections.outgoing.map((connection, index) => (
+            {limitedOutgoing.map((connection, index) => (
               <div key={connection.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-200 hover:shadow-md transition-all duration-300" style={{animationDelay: `${index * 0.1}s`}}>
                 <div>
                   <p className="font-semibold text-lg text-gray-800">
@@ -166,16 +192,16 @@ export const PendingRequests = ({ session }: PendingRequestsProps) => {
       )}
 
       {/* Incoming Connections */}
-      {pendingConnections.incoming.length > 0 && (
+      {limitedIncoming.length > 0 && (
         <div className="p-6 bg-white rounded-xl border-2 border-orange-400 shadow-lg relative">
           <div className="absolute top-2 right-2 text-orange-500">
             📬
           </div>
           <h4 className="font-bold text-2xl text-orange-700 mb-4">
-            📬 Received Requests ({pendingConnections.incoming.length})
+            📬 Received Requests ({pendingConnections.incoming.length > 3 ? '3+' : pendingConnections.incoming.length})
           </h4>
           <div className="space-y-3">
-            {pendingConnections.incoming.map((connection, index) => (
+            {limitedIncoming.map((connection, index) => (
               <div key={connection.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl border border-orange-200 hover:shadow-md transition-all duration-300 hover:scale-102" style={{animationDelay: `${index * 0.1}s`}}>
                 <div>
                   <p className="font-semibold text-lg text-gray-800">
@@ -193,6 +219,37 @@ export const PendingRequests = ({ session }: PendingRequestsProps) => {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Latest Connection */}
+      {latestConnection && (
+        <div className="p-6 bg-white rounded-xl border-2 border-green-400 shadow-lg relative overflow-hidden">
+          <h4 className="font-bold text-2xl text-green-700 mb-4">
+            🤝 Your Latest Connection
+          </h4>
+          <div className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200 hover:shadow-md transition-all duration-300 hover:scale-102">
+            <div>
+              <p className="font-semibold text-lg text-gray-800">
+                {(() => {
+                  const otherUserId = latestConnection.user_id_1 === user?.id ? latestConnection.user_id_2 : latestConnection.user_id_1;
+                  const otherUserAddress = latestConnection.user_id_1 === user?.id ? latestConnection.user_2_address : latestConnection.user_1_address;
+                  const otherUsername = otherUserAddress ? usernames[otherUserAddress] : null;
+                  return otherUsername || `Together ID #${otherUserId}`;
+                })()}
+              </p>
+            </div>
+            <div className="text-right">
+              <div className="flex items-center gap-2">
+                <span className="bg-green-500 text-white text-sm font-bold px-3 py-1 rounded-full">
+                  Connected
+                </span>
+              </div>
+              <p className="text-sm text-gray-600 mt-1 font-medium">
+                {new Date(latestConnection.created_at).toLocaleDateString()}
+              </p>
+            </div>
           </div>
         </div>
       )}

@@ -8,12 +8,19 @@ const InlineLanguageCarousel = () => {
   const languages = [
     "together",
     "juntos", 
+    "together",
     "ด้วยกัน",
+    "together",
     "一緒に",
+    "together",
     "함께",
+    "together",
     "一起",
+    "together",
     "एक साथ",
+    "together",
     "معاً",
+    "together",
     "ensemble"
   ];
 

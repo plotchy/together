@@ -76,7 +76,7 @@ export const HomeContent = ({ session }: HomeContentProps) => {
 
   // Show the main interface once user is loaded
   return (
-    <div className="w-full space-y-8">
+    <div className="w-full space-y-6">
       <CreateTogether session={session} />
       <PendingRequests session={session} />
     </div>
