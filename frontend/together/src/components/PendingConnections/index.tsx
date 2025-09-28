@@ -118,7 +118,7 @@ export const PendingConnections = ({ session }: PendingConnectionsProps) => {
   if (loading) {
     return (
       <div className="w-full p-4 bg-white rounded-xl border-2 border-gray-200">
-        <div className="animate-pulse">
+        <div>
           <div className="h-4 bg-gray-300 rounded w-48 mb-3"></div>
           <div className="space-y-2">
             <div className="h-3 bg-gray-300 rounded w-full"></div>
@@ -149,40 +149,43 @@ export const PendingConnections = ({ session }: PendingConnectionsProps) => {
       {/* <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Live Connections</h3>
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
           <span className="text-xs text-gray-500">Live</span>
         </div>
       </div> */}
 
       {/* All Optimistic Connections */}
       {allOptimistic.length > 0 && (
-        <div className="p-4 bg-white rounded-xl border-2 border-green-200">
-          <h4 className="font-semibold text-green-800 mb-3">
-            Connections ({allOptimistic.length})
+        <div className="p-6 bg-white rounded-xl border-2 border-green-400 shadow-lg relative overflow-hidden">
+          <div className="absolute top-2 right-2 text-green-500">
+            🎉
+          </div>
+          <h4 className="font-bold text-2xl text-green-700 mb-4">
+            🎊 Your Connections ({allOptimistic.length}) 🎊
           </h4>
-          <div className="space-y-2">
-            {allOptimistic.map((connection) => (
-              <div key={connection.id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+          <div className="space-y-3">
+            {allOptimistic.map((connection, index) => (
+              <div key={connection.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200 hover:shadow-md transition-all duration-300 hover:scale-102" style={{animationDelay: `${index * 0.1}s`}}>
                 <div>
-                  <p className="font-medium text-sm">
-                    🎯 {(() => {
+                  <p className="font-semibold text-lg text-gray-800">
+                    {(() => {
                       const otherUserId = connection.user_id_1 === user?.id ? connection.user_id_2 : connection.user_id_1;
                       const otherUserAddress = connection.user_id_1 === user?.id ? connection.user_2_address : connection.user_1_address;
                       const otherUsername = otherUserAddress ? usernames[otherUserAddress] : null;
                       return otherUsername || `Together ID #${otherUserId}`;
                     })()}
                   </p>
-                  <p className="text-xs text-gray-600">
-                    Connected together
+                  <p className="text-sm text-green-600 font-medium">
+                    ✨ Connected together ✨
                   </p>
                 </div>
                 <div className="text-right">
                   <div className="flex items-center gap-2">
-                    <span className="bg-green-100 text-green-800 text-xs font-semibold px-2 py-1 rounded-full">
-                      Connected
+                    <span className="bg-green-500 text-white text-sm font-bold px-3 py-1 rounded-full">
+                      🤝 Connected
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-sm text-gray-600 mt-1 font-medium">
                     {new Date(connection.created_at).toLocaleDateString()}
                   </p>
                 </div>
@@ -193,36 +196,42 @@ export const PendingConnections = ({ session }: PendingConnectionsProps) => {
       )}
 
       {!hasAnyPending && allOptimistic.length === 0 && (
-        <div className="p-6 bg-gray-50 rounded-xl border-2 border-gray-200 text-center">
-          <p className="text-gray-600 mb-2">No connections or pending requests</p>
-          <p className="text-sm text-gray-500">
-            Send a connection request to someone to get started!
+        <div className="p-8 bg-white rounded-xl border-2 border-gray-300 text-center relative">
+          <div className="text-6xl mb-4">
+            😴
+          </div>
+          <p className="text-xl font-semibold text-gray-700 mb-2">No connections yet!</p>
+          <p className="text-lg text-gray-600">
+            Go to Home and send a connection request to get started! 🚀
           </p>
         </div>
       )}
 
       {/* Outgoing Connections */}
       {pendingConnections.outgoing.length > 0 && (
-        <div className="p-4 bg-white rounded-xl border-2 border-blue-200">
-          <h4 className="font-semibold text-blue-800 mb-3">
-            Sent Requests ({pendingConnections.outgoing.length})
+        <div className="p-6 bg-white rounded-xl border-2 border-blue-400 shadow-lg relative">
+          <div className="absolute top-2 right-2 text-blue-500">
+            📤
+          </div>
+          <h4 className="font-bold text-2xl text-blue-700 mb-4">
+            📨 Sent Requests ({pendingConnections.outgoing.length})
           </h4>
-          <div className="space-y-2">
-            {pendingConnections.outgoing.map((connection) => (
-              <div key={connection.id} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+          <div className="space-y-3">
+            {pendingConnections.outgoing.map((connection, index) => (
+              <div key={connection.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-200 hover:shadow-md transition-all duration-300" style={{animationDelay: `${index * 0.1}s`}}>
                 <div>
-                  <p className="font-medium text-sm">
+                  <p className="font-semibold text-lg text-gray-800">
                     → {connection.to_user_address ? formatUserDisplay(connection.to_user_address, usernames[connection.to_user_address]) : `Together ID #${connection.to_user_id}`}
                   </p>
-                  <p className="text-xs text-gray-600">
-                    Waiting for them to send you one back
+                  <p className="text-sm text-blue-600 font-medium">
+                    ⏳ Waiting for them to send you one back
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs font-mono text-blue-600">
+                  <p className="text-lg font-mono font-bold text-blue-700">
                     {formatTimeRemaining(connection.expires_at)}
                   </p>
-                  <p className="text-xs text-gray-500">remaining</p>
+                  <p className="text-sm text-gray-600 font-medium">remaining</p>
                 </div>
               </div>
             ))}
@@ -232,26 +241,29 @@ export const PendingConnections = ({ session }: PendingConnectionsProps) => {
 
       {/* Incoming Connections */}
       {pendingConnections.incoming.length > 0 && (
-        <div className="p-4 bg-white rounded-xl border-2 border-green-200">
-          <h4 className="font-semibold text-green-800 mb-3">
-            Received Requests ({pendingConnections.incoming.length})
+        <div className="p-6 bg-white rounded-xl border-2 border-orange-400 shadow-lg relative">
+          <div className="absolute top-2 right-2 text-orange-500">
+            📬
+          </div>
+          <h4 className="font-bold text-2xl text-orange-700 mb-4">
+            📬 Received Requests ({pendingConnections.incoming.length})
           </h4>
-          <div className="space-y-2">
-            {pendingConnections.incoming.map((connection) => (
-              <div key={connection.id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+          <div className="space-y-3">
+            {pendingConnections.incoming.map((connection, index) => (
+              <div key={connection.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl border border-orange-200 hover:shadow-md transition-all duration-300 hover:scale-102" style={{animationDelay: `${index * 0.1}s`}}>
                 <div>
-                  <p className="font-medium text-sm">
+                  <p className="font-semibold text-lg text-gray-800">
                     ← {connection.from_user_address ? formatUserDisplay(connection.from_user_address, usernames[connection.from_user_address]) : `Together ID #${connection.from_user_id}`}
                   </p>
-                  <p className="text-xs text-gray-600">
-                    Send them one back to connect!
+                  <p className="text-sm text-orange-600 font-medium">
+                    🎯 Send them one back to connect!
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs font-mono text-green-600">
+                  <p className="text-lg font-mono font-bold text-orange-700">
                     {formatTimeRemaining(connection.expires_at)}
                   </p>
-                  <p className="text-xs text-gray-500">remaining</p>
+                  <p className="text-sm text-gray-600 font-medium">remaining</p>
                 </div>
               </div>
             ))}

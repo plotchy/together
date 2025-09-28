@@ -13,15 +13,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Audio Handshake - Ultrasonic Profile Exchange",
-  description: "Share contact information with nearby devices using ultrasonic audio transmission",
+  title: "Together - Prove Human Relationships",
+  description: "Build verifiable connections with other verified humans to prove authentic relationships",
   viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
   themeColor: "#3b82f6",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Audio Handshake"
+    title: "Together"
   },
   formatDetection: {
     telephone: false,

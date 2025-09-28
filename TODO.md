@@ -1,11 +1,24 @@
 
 # short term
 
-the connections dont have strength rn lol
+spacing/colors
+
+Enter friends id here (down arrow)
+
+show pending request below request button
+
+together landing page
+
+remove eruba
+
+vercel host
+- change domain
 
 
 
 
+
+backend does txs
 
 
 # rest

@@ -14,22 +14,25 @@ interface UserInfoProps {
 export const UserInfo = ({ session }: UserInfoProps) => {
 
   return (
-    <div className="flex flex-row items-center justify-start gap-4 rounded-xl w-full border-2 border-gray-200 p-4">
-      <Marble src={session?.user?.profilePictureUrl} className="w-14" />
+    <div className="flex flex-row items-center justify-start gap-6 rounded-xl w-full border-2 border-purple-400 p-6 bg-white shadow-lg relative overflow-hidden">
+      <div className="absolute top-2 right-2 text-purple-500 animate-spin" style={{animationDuration: '4s'}}>
+        ⭐
+      </div>
+      <Marble src={session?.user?.profilePictureUrl} className="w-16 hover:scale-110 transition-transform duration-300" />
       <div className="flex flex-col items-start justify-center flex-1">
         <div className="flex flex-row items-center justify-center">
-          <span className="text-lg font-semibold capitalize">
+          <span className="text-2xl font-bold capitalize text-gray-800">
             {session?.user?.username}
           </span>
-          <span className="text-sm text-gray-500 ml-2">
-            Together ID: {session?.user?.id || 'N/A'}
-          </span>
           {session?.user?.profilePictureUrl && (
-            <CircularIcon size="sm" className="ml-2">
-              <CheckCircleSolid className="text-blue-600" />
+            <CircularIcon size="sm" className="ml-3 animate-pulse">
+              <CheckCircleSolid className="text-green-600" />
             </CircularIcon>
           )}
         </div>
+        <p className="text-sm text-purple-600 font-medium mt-1">
+          ✨ Verified Together User ✨
+        </p>
       </div>
     </div>
   );

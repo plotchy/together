@@ -55,7 +55,7 @@ export const CreateTogether = ({ session }: CreateTogetherProps) => {
 
       if (response.error) {
         setError(response.error);
-        setButtonState('failed');
+        setButtonState(undefined); // Don't change button state on error
         return;
       }
 
@@ -71,14 +71,7 @@ export const CreateTogether = ({ session }: CreateTogetherProps) => {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
-      setButtonState('failed');
-    }
-
-    // Reset failed state after delay
-    if (buttonState === 'failed') {
-      setTimeout(() => {
-        setButtonState(undefined);
-      }, 3000);
+      setButtonState(undefined); // Don't change button state on error
     }
   };
 
@@ -91,44 +84,69 @@ export const CreateTogether = ({ session }: CreateTogetherProps) => {
   }
 
   return (
-    <div className="grid w-full gap-4">
-      <p className="text-lg font-semibold">Create Pending Connection</p>
+    <div className="w-full space-y-16">
+      {user && (
+        <div className="text-center space-y-4">
+          <p className="text-3xl text-gray-700">Your Together ID is</p>
+          <p className="text-6xl font-bold text-blue-600">{user.id}</p>
+        </div>
+      )}
       
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Partner Together ID
-          </label>
-          <div className="flex gap-2">
+      <div className="space-y-6">
+        <div className="text-center space-y-12">
+          {/* <p className="text-2xl text-gray-700 mb-20">Put your friend's ID below</p> */}
+          <p className="text-2xl text-gray-700" style={{marginBottom: '5rem'}}>Put your friend's ID below</p>
+          <div className="relative">
+            {/* Spinning arrows around the input */}
+            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-4xl text-red-500 animate-bounce">
+              ↓
+            </div>
+            <div className="absolute -top-6 -left-8 text-3xl text-yellow-500 animate-spin" style={{animationDuration: '2s'}}>
+              ↙
+            </div>
+            <div className="absolute -top-6 -right-8 text-3xl text-green-500 animate-spin" style={{animationDuration: '3s', animationDirection: 'reverse'}}>
+              ↘
+            </div>
+            <div className="absolute top-1/2 -left-12 transform -translate-y-1/2 text-2xl text-purple-500 animate-pulse">
+              →
+            </div>
+            <div className="absolute top-1/2 -right-12 transform -translate-y-1/2 text-2xl text-pink-500 animate-pulse">
+              ←
+            </div>
+            <div className="absolute -bottom-8 left-1/4 text-3xl text-blue-500" style={{animation: 'bounce 1s infinite 0.5s'}}>
+              ↗
+            </div>
+            <div className="absolute -bottom-8 right-1/4 text-3xl text-indigo-500" style={{animation: 'bounce 1s infinite 1s'}}>
+              ↖
+            </div>
             <input
               type="text"
               value={partnerUserId}
-              onChange={(e) => setPartnerUserId(e.target.value)}
-              placeholder="Enter together ID (e.g., 123)"
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              onChange={(e) => {
+                setPartnerUserId(e.target.value);
+                setError(null); // Clear error when user types
+              }}
+              placeholder="Enter your friend's ID here to pair"
+              className="relative w-full px-4 py-4 border-2 border-gray-400 rounded-xl text-xl text-center text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-rainbow focus:border-transparent transition-all duration-300 hover:shadow-lg hover:scale-105 focus:shadow-xl focus:scale-105"
+              style={{
+                background: 'linear-gradient(45deg, #ffffff 0%, #f8fafc 50%, #ffffff 100%)',
+                boxShadow: !partnerUserId ? '0 0 20px rgba(59, 130, 246, 0.3)' : '0 0 30px rgba(34, 197, 94, 0.4)'
+              }}
             />
-
           </div>
         </div>
 
         {error && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-600 text-sm">{error}</p>
+            <p className="text-red-600 text-sm text-center">{error}</p>
           </div>
         )}
 
-        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-blue-700 text-sm">
-            <strong>How it works:</strong> You send a pending connection to another user. 
-            They need to send one back to you within 10 minutes to complete the connection!
-          </p>
-        </div>
-
         <LiveFeedback
           label={{
-            failed: 'Failed to create pending connection',
-            pending: 'Creating pending connection...',
-            success: 'Pending connection created!',
+            failed: 'Failed to send request',
+            pending: 'Sending request...',
+            success: 'Request sent!',
           }}
           state={buttonState}
           className="w-full"
@@ -138,13 +156,12 @@ export const CreateTogether = ({ session }: CreateTogetherProps) => {
             disabled={buttonState === 'pending' || !partnerUserId.trim()}
             size="lg"
             variant="primary"
-            className="w-full"
+            className="w-full py-3 text-lg"
           >
-            Send Connection Request
+            Send Request
           </Button>
         </LiveFeedback>
       </div>
-
     </div>
   );
 };

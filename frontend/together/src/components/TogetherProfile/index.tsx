@@ -110,35 +110,6 @@ export const TogetherProfile = ({ session }: TogetherProfileProps) => {
 
   return (
     <div className="w-full space-y-4">
-      {/* User Info and Together Stats */}
-      <div className="p-4 bg-white rounded-xl border-2 border-gray-200">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-lg font-semibold">Together Stats</h2>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-xs text-gray-500">Live</span>
-          </div>
-        </div>
-        <div className="flex items-center justify-between">
-          <div>
-            {user && (
-              <p className="text-sm font-semibold text-blue-600 mb-1">
-                Together ID: {user.id}
-              </p>
-            )}
-            <p className="text-sm text-gray-600 font-mono">
-              {profile.address.slice(0, 6)}...{profile.address.slice(-4)}
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-2xl font-bold text-blue-600">
-              {profile.total_connections}
-            </p>
-            <p className="text-sm text-gray-600">connections</p>
-          </div>
-        </div>
-      </div>
-
     </div>
   );
 };

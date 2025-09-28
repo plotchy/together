@@ -2,7 +2,8 @@
 
 import { TabItem, Tabs } from '@worldcoin/mini-apps-ui-kit-react';
 import { Bank, Home, User } from 'iconoir-react';
-import { useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 /**
  * This component uses the UI Kit to navigate between pages
@@ -12,14 +13,33 @@ import { useState } from 'react';
  */
 
 export const Navigation = () => {
+  const pathname = usePathname();
+  const router = useRouter();
   const [value, setValue] = useState('home');
 
+  // Update tab based on current path
+  useEffect(() => {
+    if (pathname.includes('/profile')) {
+      setValue('profile');
+    } else {
+      setValue('home');
+    }
+  }, [pathname]);
+
+  const handleValueChange = (newValue: string) => {
+    setValue(newValue);
+    if (newValue === 'home') {
+      router.push('/home');
+    } else if (newValue === 'profile') {
+      router.push('/profile');
+    }
+  };
+
   return (
-    <Tabs value={value} onValueChange={setValue}>
+    <Tabs value={value} onValueChange={handleValueChange}>
       <TabItem value="home" icon={<Home />} label="Home" />
-      {/* // TODO: These currently don't link anywhere */}
+      <TabItem value="profile" icon={<User />} label="Profile" />
       {/* <TabItem value="wallet" icon={<Bank />} label="Wallet" /> */}
-      {/* <TabItem value="profile" icon={<User />} label="Profile" /> */}
     </Tabs>
   );
 };
