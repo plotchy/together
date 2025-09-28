@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Session } from 'next-auth';
 import { apiClient } from '@/lib/api';
-import { UserPendingConnectionsResponse } from '@/types/api';
+import { UserPendingConnectionsResponse, UserOptimisticConnectionsResponse } from '@/types/api';
 import { useProfile } from '@/contexts/ProfileContext';
 
 interface PendingConnectionsProps {
@@ -12,6 +12,7 @@ interface PendingConnectionsProps {
 export const PendingConnections = ({ session }: PendingConnectionsProps) => {
   const { user } = useProfile();
   const [pendingConnections, setPendingConnections] = useState<UserPendingConnectionsResponse | null>(null);
+  const [optimisticConnections, setOptimisticConnections] = useState<UserOptimisticConnectionsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -20,13 +21,22 @@ export const PendingConnections = ({ session }: PendingConnectionsProps) => {
     if (!user?.id) return;
 
     try {
-      const response = await apiClient.getUserPendingConnections(user.id);
+      const [pendingResponse, optimisticResponse] = await Promise.all([
+        apiClient.getUserPendingConnections(user.id),
+        apiClient.getUserOptimisticConnections(user.id)
+      ]);
       
-      if (response.error) {
-        setError(response.error);
-      } else if (response.data) {
-        setPendingConnections(response.data);
+      if (pendingResponse.error) {
+        setError(pendingResponse.error);
+      } else if (pendingResponse.data) {
+        setPendingConnections(pendingResponse.data);
         setError(null);
+      }
+
+      if (optimisticResponse.error) {
+        console.warn('Failed to fetch optimistic connections:', optimisticResponse.error);
+      } else if (optimisticResponse.data) {
+        setOptimisticConnections(optimisticResponse.data);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
@@ -101,20 +111,55 @@ export const PendingConnections = ({ session }: PendingConnectionsProps) => {
   }
 
   const hasAnyPending = pendingConnections.outgoing.length > 0 || pendingConnections.incoming.length > 0;
+  const hasOptimistic = optimisticConnections?.connections.length > 0;
+  const unprocessedOptimistic = optimisticConnections?.connections.filter(c => !c.processed) || [];
 
   return (
     <div className="w-full space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Pending Connections</h3>
+        <h3 className="text-lg font-semibold">Live Connections</h3>
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
           <span className="text-xs text-gray-500">Live</span>
         </div>
       </div>
 
-      {!hasAnyPending && (
+      {/* Optimistic Connections (Active Connections) */}
+      {unprocessedOptimistic.length > 0 && (
+        <div className="p-4 bg-white rounded-xl border-2 border-green-200">
+          <h4 className="font-semibold text-green-800 mb-3">
+            Active Connections ({unprocessedOptimistic.length})
+          </h4>
+          <div className="space-y-2">
+            {unprocessedOptimistic.map((connection) => (
+              <div key={connection.id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                <div>
+                  <p className="font-medium text-sm">
+                    🎯 User #{connection.user_id_1 === user?.id ? connection.user_id_2 : connection.user_id_1}
+                  </p>
+                  <p className="text-xs text-gray-600">
+                    {connection.processed ? 'On-chain confirmed' : 'Waiting for blockchain confirmation'}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <div className="flex items-center gap-2">
+                    <span className="bg-green-100 text-green-800 text-xs font-semibold px-2 py-1 rounded-full">
+                      Connected
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {new Date(connection.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!hasAnyPending && unprocessedOptimistic.length === 0 && (
         <div className="p-6 bg-gray-50 rounded-xl border-2 border-gray-200 text-center">
-          <p className="text-gray-600 mb-2">No pending connections</p>
+          <p className="text-gray-600 mb-2">No active or pending connections</p>
           <p className="text-sm text-gray-500">
             Send a connection request to someone to get started!
           </p>

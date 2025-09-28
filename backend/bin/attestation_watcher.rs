@@ -204,29 +204,24 @@ async fn process_together_log(pool: &PgPool, log: &Log) -> Result<()> {
         Ok(attestation) => {
             info!("✅ Successfully inserted attestation with ID: {}", attestation.id);
             
-            // Try to mark corresponding optimistic connection as processed
+            // Try to mark the oldest unprocessed optimistic connection as processed
             // First get users by wallet addresses
             if let (Ok(Some(user1)), Ok(Some(user2))) = (
                 users::get_user_by_wallet_address(pool, &event.address_1).await,
                 users::get_user_by_wallet_address(pool, &event.address_2).await
             ) {
-                if let Err(e) = users::mark_optimistic_connection_processed(pool, user1.id, user2.id).await {
-                    // This is not critical - the optimistic connection might not exist
+                if let Err(e) = users::mark_oldest_optimistic_connection_processed(pool, user1.id, user2.id).await {
+                    // This is not critical - there might not be any unprocessed optimistic connections
                     // (e.g., if this attestation was created outside our pending connection system)
                     info!("ℹ️ Could not mark optimistic connection as processed: {}", e);
                 } else {
-                    info!("🔗 Marked optimistic connection as processed for users {} & {}", user1.id, user2.id);
+                    info!("🔗 Marked oldest optimistic connection as processed for users {} & {}", user1.id, user2.id);
                 }
             }
         }
         Err(e) => {
-            // Check if this is a duplicate (conflict)
-            if e.to_string().contains("unique constraint") || e.to_string().contains("conflict") {
-                info!("ℹ️ Attestation already exists, skipping");
-            } else {
-                error!("❌ Failed to insert attestation: {}", e);
-                return Err(e);
-            }
+            error!("❌ Failed to insert attestation: {}", e);
+            return Err(e);
         }
     }
     

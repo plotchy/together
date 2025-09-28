@@ -47,6 +47,9 @@ fn create_router(pool: PgPool, config: Config) -> Router {
         .route("/api/user/{user_id}/pending-connection", post(handlers::create_pending_connection))
         .route("/api/user/{user_id}/pending-connections", get(handlers::get_user_pending_connections))
         
+        // Optimistic connection endpoints
+        .route("/api/user/{user_id}/optimistic-connections", get(handlers::get_user_optimistic_connections))
+        
         // Attestation endpoints
         .route("/api/attest", post(handlers::attest_together))
         

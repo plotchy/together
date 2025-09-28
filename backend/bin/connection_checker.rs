@@ -107,9 +107,10 @@ async fn process_connection_match(
         user_2.id, user_2.wallet_address
     );
     
-    // Check if there's already an optimistic connection for these users
-    if let Some(optimistic) = users::get_optimistic_connection(pool, user_1.id, user_2.id).await? {
-        info!("⏳ Optimistic connection already exists (ID: {}), skipping", optimistic.id);
+    // Check if there are too many unprocessed optimistic connections for these users
+    let unprocessed_count = users::count_unprocessed_optimistic_connections(pool, user_1.id, user_2.id).await?;
+    if unprocessed_count >= 50 {
+        info!("⏳ Too many unprocessed optimistic connections ({}) between users, skipping", unprocessed_count);
         return Ok(());
     }
     
@@ -124,16 +125,16 @@ async fn process_connection_match(
         }
     }
     
-    // Delete both pending connections now that we have an optimistic connection
-    if let Err(e) = users::delete_pending_connection(pool, connection_match.pending_1.from_user_id, connection_match.pending_1.to_user_id).await {
+    // Delete the specific pending connections that matched (by ID)
+    if let Err(e) = users::delete_pending_connection_by_id(pool, connection_match.pending_1.id).await {
         error!("❌ Failed to delete pending connection 1: {}", e);
     }
     
-    if let Err(e) = users::delete_pending_connection(pool, connection_match.pending_2.from_user_id, connection_match.pending_2.to_user_id).await {
+    if let Err(e) = users::delete_pending_connection_by_id(pool, connection_match.pending_2.id).await {
         error!("❌ Failed to delete pending connection 2: {}", e);
     }
     
-    info!("🧹 Cleaned up pending connections for matched pair");
+    info!("🧹 Cleaned up matched pending connections");
     
     // Now send transaction to contract
     let current_timestamp = Utc::now().timestamp() as u64;

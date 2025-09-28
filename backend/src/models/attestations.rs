@@ -46,6 +46,8 @@ pub struct ConnectionInfo {
     pub attestation_timestamp: i64,
     pub tx_hash: Option<String>,
     pub partner_username: Option<String>,
+    pub connection_strength: Option<i64>, // Number of times connected with this partner
+    pub has_optimistic: Option<bool>, // Whether there are unprocessed optimistic connections
 }
 
 #[derive(Debug, Clone, FromRow, Serialize, Deserialize)]

@@ -4,6 +4,8 @@ import {
   CreatePendingConnectionRequest,
   PendingConnectionResponse,
   UserPendingConnectionsResponse,
+  OptimisticConnectionResponse,
+  UserOptimisticConnectionsResponse,
   TogetherAttestation, 
   AttestTogetherRequest, 
   AttestTogetherResponse,
@@ -104,6 +106,11 @@ class ApiClient {
   async getUserPendingConnections(userId: number): Promise<ApiResponse<UserPendingConnectionsResponse>> {
     const endpoint = `/api/user/${userId}/pending-connections`;
     return this.request<UserPendingConnectionsResponse>(endpoint);
+  }
+
+  async getUserOptimisticConnections(userId: number): Promise<ApiResponse<UserOptimisticConnectionsResponse>> {
+    const endpoint = `/api/user/${userId}/optimistic-connections`;
+    return this.request<UserOptimisticConnectionsResponse>(endpoint);
   }
 
   async health(): Promise<ApiResponse<string>> {

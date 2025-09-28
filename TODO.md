@@ -1,8 +1,7 @@
 
 # short term
 
-have backend submit actual tx on attest
-- we'll just redeploy contracts if we want clean history
+the connections dont have strength rn lol
 
 
 

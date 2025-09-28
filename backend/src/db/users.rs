@@ -278,3 +278,66 @@ pub async fn get_unprocessed_optimistic_connections(pool: &PgPool) -> Result<Vec
 
     Ok(connections)
 }
+
+pub async fn count_unprocessed_optimistic_connections(pool: &PgPool, user_id_1: i32, user_id_2: i32) -> Result<i64> {
+    let (smaller_id, larger_id) = if user_id_1 < user_id_2 {
+        (user_id_1, user_id_2)
+    } else {
+        (user_id_2, user_id_1)
+    };
+
+    let count = sqlx::query_scalar!(
+        r#"
+        SELECT COUNT(*) as count
+        FROM optimistic_connections
+        WHERE user_id_1 = $1 AND user_id_2 = $2 AND processed = FALSE
+        "#,
+        smaller_id,
+        larger_id
+    )
+    .fetch_one(pool)
+    .await?;
+
+    Ok(count.unwrap_or(0))
+}
+
+pub async fn delete_pending_connection_by_id(pool: &PgPool, connection_id: uuid::Uuid) -> Result<()> {
+    sqlx::query!(
+        r#"
+        DELETE FROM pending_connections
+        WHERE id = $1
+        "#,
+        connection_id
+    )
+    .execute(pool)
+    .await?;
+
+    Ok(())
+}
+
+pub async fn mark_oldest_optimistic_connection_processed(pool: &PgPool, user_id_1: i32, user_id_2: i32) -> Result<()> {
+    let (smaller_id, larger_id) = if user_id_1 < user_id_2 {
+        (user_id_1, user_id_2)
+    } else {
+        (user_id_2, user_id_1)
+    };
+
+    sqlx::query!(
+        r#"
+        UPDATE optimistic_connections
+        SET processed = TRUE
+        WHERE id = (
+            SELECT id FROM optimistic_connections
+            WHERE user_id_1 = $1 AND user_id_2 = $2 AND processed = FALSE
+            ORDER BY created_at ASC
+            LIMIT 1
+        )
+        "#,
+        smaller_id,
+        larger_id
+    )
+    .execute(pool)
+    .await?;
+
+    Ok(())
+}

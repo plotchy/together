@@ -15,6 +15,8 @@ export interface ConnectionInfo {
   attestation_timestamp: number;
   tx_hash?: string;
   partner_username?: string;
+  connection_strength?: number; // Number of times connected with this partner
+  has_optimistic?: boolean; // Whether there are unprocessed optimistic connections
 }
 
 export interface UserProfile {
@@ -72,4 +74,16 @@ export interface PendingConnectionResponse {
 export interface UserPendingConnectionsResponse {
   outgoing: PendingConnectionResponse[];
   incoming: PendingConnectionResponse[];
+}
+
+export interface OptimisticConnectionResponse {
+  id: string;
+  user_id_1: number;
+  user_id_2: number;
+  processed: boolean;
+  created_at: string;
+}
+
+export interface UserOptimisticConnectionsResponse {
+  connections: OptimisticConnectionResponse[];
 }

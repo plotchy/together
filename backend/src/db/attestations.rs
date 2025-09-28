@@ -1,5 +1,5 @@
 use anyhow::Result;
-use sqlx::PgPool;
+use sqlx::{PgPool, Row};
 use crate::models::attestations::{TogetherAttestation, UserProfile, ConnectionInfo, UsernameCache};
 
 /// Insert a new together attestation
@@ -86,25 +86,53 @@ pub async fn get_user_profile(pool: &PgPool, address: &str, limit: Option<i64>) 
     
     let limit = limit.unwrap_or(50); // Default to 50 recent connections
     
-    let recent_connections = sqlx::query_as::<_, ConnectionInfo>(
+    let recent_connections = sqlx::query(
         r#"
-        SELECT 
-            CASE 
-                WHEN LOWER(ta.address_1) = LOWER($1) THEN ta.address_2
-                ELSE ta.address_1
-            END as partner_address,
-            ta.attestation_timestamp,
-            ta.tx_hash,
-            uc.username as partner_username
-        FROM together_attestations ta
-        LEFT JOIN username_cache uc ON (
-            CASE 
-                WHEN LOWER(ta.address_1) = LOWER($1) THEN LOWER(uc.address) = LOWER(ta.address_2)
-                ELSE LOWER(uc.address) = LOWER(ta.address_1)
-            END
+        WITH connection_stats AS (
+            SELECT 
+                CASE 
+                    WHEN LOWER(ta.address_1) = LOWER($1) THEN ta.address_2
+                    ELSE ta.address_1
+                END as partner_address,
+                MAX(ta.attestation_timestamp) as latest_timestamp,
+                MAX(ta.tx_hash) as latest_tx_hash,
+                COUNT(*) as connection_strength
+            FROM together_attestations ta
+            WHERE LOWER(ta.address_1) = LOWER($1) OR LOWER(ta.address_2) = LOWER($1)
+            GROUP BY partner_address
+        ),
+        optimistic_stats AS (
+            SELECT 
+                u1.wallet_address as partner_address,
+                BOOL_OR(NOT oc.processed) as has_optimistic
+            FROM optimistic_connections oc
+            JOIN users u1 ON u1.id = oc.user_id_1
+            JOIN users u2 ON u2.id = oc.user_id_2
+            WHERE LOWER(u2.wallet_address) = LOWER($1)
+            GROUP BY u1.wallet_address
+            
+            UNION ALL
+            
+            SELECT 
+                u2.wallet_address as partner_address,
+                BOOL_OR(NOT oc.processed) as has_optimistic
+            FROM optimistic_connections oc
+            JOIN users u1 ON u1.id = oc.user_id_1
+            JOIN users u2 ON u2.id = oc.user_id_2
+            WHERE LOWER(u1.wallet_address) = LOWER($1)
+            GROUP BY u2.wallet_address
         )
-        WHERE LOWER(ta.address_1) = LOWER($1) OR LOWER(ta.address_2) = LOWER($1)
-        ORDER BY ta.attestation_timestamp DESC
+        SELECT 
+            cs.partner_address,
+            cs.latest_timestamp as attestation_timestamp,
+            cs.latest_tx_hash as tx_hash,
+            uc.username as partner_username,
+            cs.connection_strength,
+            COALESCE(os.has_optimistic, FALSE) as has_optimistic
+        FROM connection_stats cs
+        LEFT JOIN username_cache uc ON LOWER(uc.address) = LOWER(cs.partner_address)
+        LEFT JOIN optimistic_stats os ON LOWER(os.partner_address) = LOWER(cs.partner_address)
+        ORDER BY cs.latest_timestamp DESC
         LIMIT $2
         "#
     )
@@ -113,12 +141,24 @@ pub async fn get_user_profile(pool: &PgPool, address: &str, limit: Option<i64>) 
     .fetch_all(pool)
     .await?;
 
+    let mut connections = Vec::new();
+    for row in recent_connections {
+        connections.push(ConnectionInfo {
+            partner_address: row.get("partner_address"),
+            attestation_timestamp: row.get("attestation_timestamp"),
+            tx_hash: row.get("tx_hash"),
+            partner_username: row.get("partner_username"),
+            connection_strength: Some(row.get("connection_strength")),
+            has_optimistic: Some(row.get("has_optimistic")),
+        });
+    }
+
     Ok(UserProfile {
         address: address.to_string(),
         username: user_cache.as_ref().and_then(|cache| cache.username.clone()),
         profile_picture_url: user_cache.as_ref().and_then(|cache| cache.profile_picture_url.clone()),
         total_connections,
-        recent_connections,
+        recent_connections: connections,
     })
 }
 

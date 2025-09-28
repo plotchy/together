@@ -98,6 +98,20 @@ pub struct UserPendingConnectionsResponse {
     pub incoming: Vec<PendingConnectionResponse>,
 }
 
+#[derive(Debug, Serialize)]
+pub struct OptimisticConnectionResponse {
+    pub id: String,
+    pub user_id_1: i32,
+    pub user_id_2: i32,
+    pub processed: bool,
+    pub created_at: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct UserOptimisticConnectionsResponse {
+    pub connections: Vec<OptimisticConnectionResponse>,
+}
+
 /// Get user profile with their together connections
 pub async fn get_profile(
     State((pool, _config)): State<(PgPool, Config)>,
@@ -389,6 +403,65 @@ pub async fn get_user_pending_connections(
     Ok(Json(UserPendingConnectionsResponse {
         outgoing,
         incoming,
+    }))
+}
+
+/// Get all optimistic connections for a user (both processed and unprocessed)
+pub async fn get_user_optimistic_connections(
+    State((pool, _config)): State<(PgPool, Config)>,
+    Path(user_id): Path<i32>,
+) -> Result<Json<UserOptimisticConnectionsResponse>, (StatusCode, Json<TogetherError>)> {
+    // Validate user exists
+    let _user = users::get_user_by_id(&pool, user_id).await
+        .map_err(|e| {
+            tracing::error!("Failed to get user: {}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(TogetherError {
+                    error: "Failed to validate user".to_string(),
+                }),
+            )
+        })?
+        .ok_or_else(|| (
+            StatusCode::NOT_FOUND,
+            Json(TogetherError {
+                error: "User not found".to_string(),
+            }),
+        ))?;
+
+    // Get all optimistic connections where this user is involved
+    let connections_result = sqlx::query_as!(
+        crate::models::users::OptimisticConnection,
+        "SELECT id, user_id_1, user_id_2, processed, created_at
+        FROM optimistic_connections
+        WHERE user_id_1 = $1 OR user_id_2 = $1
+        ORDER BY created_at DESC",
+        user_id
+    )
+    .fetch_all(&pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("Failed to get optimistic connections: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(TogetherError {
+                error: "Failed to get optimistic connections".to_string(),
+            }),
+        )
+    })?;
+
+    let connections: Vec<OptimisticConnectionResponse> = connections_result.into_iter().map(|c| {
+        OptimisticConnectionResponse {
+            id: c.id.to_string(),
+            user_id_1: c.user_id_1,
+            user_id_2: c.user_id_2,
+            processed: c.processed,
+            created_at: c.created_at.to_rfc3339(),
+        }
+    }).collect();
+
+    Ok(Json(UserOptimisticConnectionsResponse {
+        connections,
     }))
 }
 
