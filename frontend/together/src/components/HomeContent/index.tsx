@@ -39,7 +39,7 @@ export const HomeContent = ({ session }: HomeContentProps) => {
     };
 
     fetchUser();
-  }, [session?.user?.walletAddress, setUser]);
+  }, [session?.user?.walletAddress]);
 
   // Show auth button if no session
   if (!session?.user?.walletAddress) {
