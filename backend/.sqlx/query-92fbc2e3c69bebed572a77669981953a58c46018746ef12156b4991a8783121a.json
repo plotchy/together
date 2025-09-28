@@ -1,0 +1,58 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT pc.id, pc.from_user_id, pc.to_user_id, pc.created_at, pc.expires_at,\n                u1.wallet_address as from_user_address, u2.wallet_address as to_user_address\n        FROM pending_connections pc\n        JOIN users u1 ON pc.from_user_id = u1.id\n        JOIN users u2 ON pc.to_user_id = u2.id\n        WHERE pc.from_user_id = $1 AND pc.expires_at > NOW()\n        ORDER BY pc.created_at DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "from_user_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "to_user_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 4,
+        "name": "expires_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 5,
+        "name": "from_user_address",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "to_user_address",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "92fbc2e3c69bebed572a77669981953a58c46018746ef12156b4991a8783121a"
+}

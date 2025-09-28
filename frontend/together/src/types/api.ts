@@ -67,6 +67,10 @@ export interface PendingConnectionResponse {
   id: string;
   from_user_id: number;
   to_user_id: number;
+  from_user_address?: string;
+  to_user_address?: string;
+  from_username?: string;
+  to_username?: string;
   created_at: string;
   expires_at: string;
 }
@@ -80,6 +84,10 @@ export interface OptimisticConnectionResponse {
   id: string;
   user_id_1: number;
   user_id_2: number;
+  user_1_address?: string;
+  user_2_address?: string;
+  user_1_username?: string;
+  user_2_username?: string;
   processed: boolean;
   created_at: string;
 }

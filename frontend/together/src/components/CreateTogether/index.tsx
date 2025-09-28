@@ -19,7 +19,7 @@ export const CreateTogether = ({ session }: CreateTogetherProps) => {
   const [error, setError] = useState<string | null>(null);
 
   const generateRandomUserId = () => {
-    // Generate a random user ID for testing (between 1 and 1000)
+    // Generate a random together ID for testing (between 1 and 1000)
     return Math.floor(Math.random() * 1000) + 1;
   };
 
@@ -33,10 +33,10 @@ export const CreateTogether = ({ session }: CreateTogetherProps) => {
       return;
     }
 
-    // Validate user ID format
+    // Validate together ID format
     const partnerUserIdNum = parseInt(partnerUserId);
     if (isNaN(partnerUserIdNum) || partnerUserIdNum <= 0) {
-      setError('Invalid user ID format');
+      setError('Invalid together ID format');
       return;
     }
 
@@ -97,24 +97,17 @@ export const CreateTogether = ({ session }: CreateTogetherProps) => {
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Partner User ID
+            Partner Together ID
           </label>
           <div className="flex gap-2">
             <input
               type="text"
               value={partnerUserId}
               onChange={(e) => setPartnerUserId(e.target.value)}
-              placeholder="Enter user ID (e.g., 123)"
+              placeholder="Enter together ID (e.g., 123)"
               className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
-            <Button
-              onClick={handleRandomUserId}
-              size="sm"
-              variant="tertiary"
-              className="px-3"
-            >
-              Random
-            </Button>
+
           </div>
         </div>
 
@@ -152,13 +145,6 @@ export const CreateTogether = ({ session }: CreateTogetherProps) => {
         </LiveFeedback>
       </div>
 
-      {/* Debug Info */}
-      <div className="p-3 bg-gray-50 rounded-lg">
-        <p className="text-xs text-gray-600 mb-1">Your User ID:</p>
-        <p className="text-xs font-semibold text-gray-800">#{user.id}</p>
-        <p className="text-xs text-gray-600 mb-1 mt-2">Your Address:</p>
-        <p className="text-xs font-mono text-gray-800">{session.user.walletAddress}</p>
-      </div>
     </div>
   );
 };

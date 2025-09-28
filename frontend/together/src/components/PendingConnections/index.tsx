@@ -4,6 +4,7 @@ import { Session } from 'next-auth';
 import { apiClient } from '@/lib/api';
 import { UserPendingConnectionsResponse, UserOptimisticConnectionsResponse } from '@/types/api';
 import { useProfile } from '@/contexts/ProfileContext';
+import { getUsernamesByAddresses, formatUserDisplay } from '@/utils/username';
 
 interface PendingConnectionsProps {
   session: Session | null;
@@ -13,6 +14,7 @@ export const PendingConnections = ({ session }: PendingConnectionsProps) => {
   const { user } = useProfile();
   const [pendingConnections, setPendingConnections] = useState<UserPendingConnectionsResponse | null>(null);
   const [optimisticConnections, setOptimisticConnections] = useState<UserOptimisticConnectionsResponse | null>(null);
+  const [usernames, setUsernames] = useState<Record<string, string | null>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -37,6 +39,35 @@ export const PendingConnections = ({ session }: PendingConnectionsProps) => {
         console.warn('Failed to fetch optimistic connections:', optimisticResponse.error);
       } else if (optimisticResponse.data) {
         setOptimisticConnections(optimisticResponse.data);
+      }
+
+      // Collect all unique addresses for username fetching
+      const addresses = new Set<string>();
+      if (pendingResponse.data) {
+        pendingResponse.data.outgoing.forEach(conn => {
+          if (conn.from_user_address) addresses.add(conn.from_user_address);
+          if (conn.to_user_address) addresses.add(conn.to_user_address);
+        });
+        pendingResponse.data.incoming.forEach(conn => {
+          if (conn.from_user_address) addresses.add(conn.from_user_address);
+          if (conn.to_user_address) addresses.add(conn.to_user_address);
+        });
+      }
+      if (optimisticResponse.data) {
+        optimisticResponse.data.connections.forEach(conn => {
+          if (conn.user_1_address) addresses.add(conn.user_1_address);
+          if (conn.user_2_address) addresses.add(conn.user_2_address);
+        });
+      }
+
+      // Fetch usernames for all addresses
+      if (addresses.size > 0) {
+        try {
+          const usernameMap = await getUsernamesByAddresses(Array.from(addresses));
+          setUsernames(usernameMap);
+        } catch (err) {
+          console.warn('Failed to fetch usernames:', err);
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
@@ -111,34 +142,38 @@ export const PendingConnections = ({ session }: PendingConnectionsProps) => {
   }
 
   const hasAnyPending = pendingConnections.outgoing.length > 0 || pendingConnections.incoming.length > 0;
-  const hasOptimistic = optimisticConnections?.connections.length > 0;
-  const unprocessedOptimistic = optimisticConnections?.connections.filter(c => !c.processed) || [];
+  const allOptimistic = optimisticConnections?.connections || [];
 
   return (
     <div className="w-full space-y-4">
-      <div className="flex items-center justify-between">
+      {/* <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Live Connections</h3>
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
           <span className="text-xs text-gray-500">Live</span>
         </div>
-      </div>
+      </div> */}
 
-      {/* Optimistic Connections (Active Connections) */}
-      {unprocessedOptimistic.length > 0 && (
+      {/* All Optimistic Connections */}
+      {allOptimistic.length > 0 && (
         <div className="p-4 bg-white rounded-xl border-2 border-green-200">
           <h4 className="font-semibold text-green-800 mb-3">
-            Active Connections ({unprocessedOptimistic.length})
+            Connections ({allOptimistic.length})
           </h4>
           <div className="space-y-2">
-            {unprocessedOptimistic.map((connection) => (
+            {allOptimistic.map((connection) => (
               <div key={connection.id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
                 <div>
                   <p className="font-medium text-sm">
-                    🎯 User #{connection.user_id_1 === user?.id ? connection.user_id_2 : connection.user_id_1}
+                    🎯 {(() => {
+                      const otherUserId = connection.user_id_1 === user?.id ? connection.user_id_2 : connection.user_id_1;
+                      const otherUserAddress = connection.user_id_1 === user?.id ? connection.user_2_address : connection.user_1_address;
+                      const otherUsername = otherUserAddress ? usernames[otherUserAddress] : null;
+                      return otherUsername || `Together ID #${otherUserId}`;
+                    })()}
                   </p>
                   <p className="text-xs text-gray-600">
-                    {connection.processed ? 'On-chain confirmed' : 'Waiting for blockchain confirmation'}
+                    Connected together
                   </p>
                 </div>
                 <div className="text-right">
@@ -157,9 +192,9 @@ export const PendingConnections = ({ session }: PendingConnectionsProps) => {
         </div>
       )}
 
-      {!hasAnyPending && unprocessedOptimistic.length === 0 && (
+      {!hasAnyPending && allOptimistic.length === 0 && (
         <div className="p-6 bg-gray-50 rounded-xl border-2 border-gray-200 text-center">
-          <p className="text-gray-600 mb-2">No active or pending connections</p>
+          <p className="text-gray-600 mb-2">No connections or pending requests</p>
           <p className="text-sm text-gray-500">
             Send a connection request to someone to get started!
           </p>
@@ -177,7 +212,7 @@ export const PendingConnections = ({ session }: PendingConnectionsProps) => {
               <div key={connection.id} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                 <div>
                   <p className="font-medium text-sm">
-                    → User #{connection.to_user_id}
+                    → {connection.to_user_address ? formatUserDisplay(connection.to_user_address, usernames[connection.to_user_address]) : `Together ID #${connection.to_user_id}`}
                   </p>
                   <p className="text-xs text-gray-600">
                     Waiting for them to send you one back
@@ -206,7 +241,7 @@ export const PendingConnections = ({ session }: PendingConnectionsProps) => {
               <div key={connection.id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
                 <div>
                   <p className="font-medium text-sm">
-                    ← User #{connection.from_user_id}
+                    ← {connection.from_user_address ? formatUserDisplay(connection.from_user_address, usernames[connection.from_user_address]) : `Together ID #${connection.from_user_id}`}
                   </p>
                   <p className="text-xs text-gray-600">
                     Send them one back to connect!

@@ -123,7 +123,7 @@ export const TogetherProfile = ({ session }: TogetherProfileProps) => {
           <div>
             {user && (
               <p className="text-sm font-semibold text-blue-600 mb-1">
-                User ID: {user.id}
+                Together ID: {user.id}
               </p>
             )}
             <p className="text-sm text-gray-600 font-mono">
@@ -139,61 +139,6 @@ export const TogetherProfile = ({ session }: TogetherProfileProps) => {
         </div>
       </div>
 
-      {/* Recent Connections */}
-      {profile.recent_connections.length > 0 && (
-        <div className="p-4 bg-white rounded-xl border-2 border-gray-200">
-          <h3 className="text-lg font-semibold mb-3">Recent Connections</h3>
-          <div className="space-y-3">
-            {profile.recent_connections.map((connection: ConnectionInfo, index: number) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <Marble src="" className="w-8" />
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium text-sm">
-                        {connection.partner_username || 'Anonymous'}
-                      </p>
-                      {connection.connection_strength && connection.connection_strength > 1 && (
-                        <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded-full">
-                          {connection.connection_strength}x
-                        </span>
-                      )}
-                      {connection.has_optimistic && (
-                        <span className="bg-green-100 text-green-800 text-xs font-semibold px-2 py-1 rounded-full">
-                          Live
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-600 font-mono">
-                      {connection.partner_address.slice(0, 6)}...{connection.partner_address.slice(-4)}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-gray-500">
-                    {new Date(connection.attestation_timestamp * 1000).toLocaleDateString()}
-                  </p>
-                  {connection.connection_strength && connection.connection_strength > 1 && (
-                    <p className="text-xs text-blue-600">
-                      {connection.connection_strength} connection{connection.connection_strength > 1 ? 's' : ''}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* No Connections State */}
-      {profile.recent_connections.length === 0 && (
-        <div className="p-6 bg-gray-50 rounded-xl border-2 border-gray-200 text-center">
-          <p className="text-gray-600 mb-2">No connections yet</p>
-          <p className="text-sm text-gray-500">
-            Start connecting with others to see your history here!
-          </p>
-        </div>
-      )}
     </div>
   );
 };

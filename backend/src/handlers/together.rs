@@ -88,6 +88,10 @@ pub struct PendingConnectionResponse {
     pub id: String,
     pub from_user_id: i32,
     pub to_user_id: i32,
+    pub from_user_address: Option<String>,
+    pub to_user_address: Option<String>,
+    pub from_username: Option<String>,
+    pub to_username: Option<String>,
     pub created_at: String,
     pub expires_at: String,
 }
@@ -103,6 +107,10 @@ pub struct OptimisticConnectionResponse {
     pub id: String,
     pub user_id_1: i32,
     pub user_id_2: i32,
+    pub user_1_address: Option<String>,
+    pub user_2_address: Option<String>,
+    pub user_1_username: Option<String>,
+    pub user_2_username: Option<String>,
     pub processed: bool,
     pub created_at: String,
 }
@@ -310,6 +318,10 @@ pub async fn create_pending_connection(
         id: pending.id.to_string(),
         from_user_id: pending.from_user_id,
         to_user_id: pending.to_user_id,
+        from_user_address: None, // Not fetched in this endpoint
+        to_user_address: None,   // Not fetched in this endpoint  
+        from_username: None,     // Will be populated by frontend
+        to_username: None,       // Will be populated by frontend
         created_at: pending.created_at.to_rfc3339(),
         expires_at: pending.expires_at.to_rfc3339(),
     }))
@@ -339,12 +351,14 @@ pub async fn get_user_pending_connections(
         ))?;
 
     // Get outgoing pending connections (connections this user initiated)
-    let outgoing_result = sqlx::query_as!(
-        crate::models::users::PendingConnection,
-        "SELECT id, from_user_id, to_user_id, created_at, expires_at
-        FROM pending_connections
-        WHERE from_user_id = $1 AND expires_at > NOW()
-        ORDER BY created_at DESC",
+    let outgoing_result = sqlx::query!(
+        "SELECT pc.id, pc.from_user_id, pc.to_user_id, pc.created_at, pc.expires_at,
+                u1.wallet_address as from_user_address, u2.wallet_address as to_user_address
+        FROM pending_connections pc
+        JOIN users u1 ON pc.from_user_id = u1.id
+        JOIN users u2 ON pc.to_user_id = u2.id
+        WHERE pc.from_user_id = $1 AND pc.expires_at > NOW()
+        ORDER BY pc.created_at DESC",
         user_id
     )
     .fetch_all(&pool)
@@ -360,12 +374,14 @@ pub async fn get_user_pending_connections(
     })?;
 
     // Get incoming pending connections (connections sent to this user)
-    let incoming_result = sqlx::query_as!(
-        crate::models::users::PendingConnection,
-        "SELECT id, from_user_id, to_user_id, created_at, expires_at
-        FROM pending_connections
-        WHERE to_user_id = $1 AND expires_at > NOW()
-        ORDER BY created_at DESC",
+    let incoming_result = sqlx::query!(
+        "SELECT pc.id, pc.from_user_id, pc.to_user_id, pc.created_at, pc.expires_at,
+                u1.wallet_address as from_user_address, u2.wallet_address as to_user_address
+        FROM pending_connections pc
+        JOIN users u1 ON pc.from_user_id = u1.id
+        JOIN users u2 ON pc.to_user_id = u2.id
+        WHERE pc.to_user_id = $1 AND pc.expires_at > NOW()
+        ORDER BY pc.created_at DESC",
         user_id
     )
     .fetch_all(&pool)
@@ -385,6 +401,10 @@ pub async fn get_user_pending_connections(
             id: p.id.to_string(),
             from_user_id: p.from_user_id,
             to_user_id: p.to_user_id,
+            from_user_address: Some(p.from_user_address),
+            to_user_address: Some(p.to_user_address),
+            from_username: None, // Will be populated by frontend
+            to_username: None,   // Will be populated by frontend
             created_at: p.created_at.to_rfc3339(),
             expires_at: p.expires_at.to_rfc3339(),
         }
@@ -395,6 +415,10 @@ pub async fn get_user_pending_connections(
             id: p.id.to_string(),
             from_user_id: p.from_user_id,
             to_user_id: p.to_user_id,
+            from_user_address: Some(p.from_user_address),
+            to_user_address: Some(p.to_user_address),
+            from_username: None, // Will be populated by frontend
+            to_username: None,   // Will be populated by frontend
             created_at: p.created_at.to_rfc3339(),
             expires_at: p.expires_at.to_rfc3339(),
         }
@@ -430,12 +454,14 @@ pub async fn get_user_optimistic_connections(
         ))?;
 
     // Get all optimistic connections where this user is involved
-    let connections_result = sqlx::query_as!(
-        crate::models::users::OptimisticConnection,
-        "SELECT id, user_id_1, user_id_2, processed, created_at
-        FROM optimistic_connections
-        WHERE user_id_1 = $1 OR user_id_2 = $1
-        ORDER BY created_at DESC",
+    let connections_result = sqlx::query!(
+        "SELECT oc.id, oc.user_id_1, oc.user_id_2, oc.processed, oc.created_at,
+                u1.wallet_address as user_1_address, u2.wallet_address as user_2_address
+        FROM optimistic_connections oc
+        JOIN users u1 ON oc.user_id_1 = u1.id
+        JOIN users u2 ON oc.user_id_2 = u2.id
+        WHERE oc.user_id_1 = $1 OR oc.user_id_2 = $1
+        ORDER BY oc.created_at DESC",
         user_id
     )
     .fetch_all(&pool)
@@ -455,6 +481,10 @@ pub async fn get_user_optimistic_connections(
             id: c.id.to_string(),
             user_id_1: c.user_id_1,
             user_id_2: c.user_id_2,
+            user_1_address: Some(c.user_1_address),
+            user_2_address: Some(c.user_2_address),
+            user_1_username: None, // Will be populated by frontend
+            user_2_username: None, // Will be populated by frontend
             processed: c.processed,
             created_at: c.created_at.to_rfc3339(),
         }
