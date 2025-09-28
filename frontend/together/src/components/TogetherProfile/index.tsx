@@ -76,7 +76,7 @@ export const TogetherProfile = ({ session }: TogetherProfileProps) => {
         clearInterval(intervalRef.current);
       }
     };
-  }, [session?.user?.walletAddress, session?.user?.username, session?.user?.profilePictureUrl, setUser, setProfile]);
+  }, [session?.user?.walletAddress, session?.user?.username, session?.user?.profilePictureUrl]);
 
   if (loading) {
     return (
