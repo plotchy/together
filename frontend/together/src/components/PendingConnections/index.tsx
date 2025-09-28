@@ -18,6 +18,7 @@ export const PendingConnections = ({ session }: PendingConnectionsProps) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const fetchedAddressesRef = useRef<Set<string>>(new Set());
 
   const fetchPendingConnections = useCallback(async () => {
     if (!user?.id) return;
@@ -60,11 +61,14 @@ export const PendingConnections = ({ session }: PendingConnectionsProps) => {
         });
       }
 
-      // Fetch usernames for all addresses
-      if (addresses.size > 0) {
+      // Only fetch usernames for new addresses we haven't seen before
+      const newAddresses = Array.from(addresses).filter(addr => !fetchedAddressesRef.current.has(addr));
+      if (newAddresses.length > 0) {
         try {
-          const usernameMap = await getUsernamesByAddresses(Array.from(addresses));
-          setUsernames(usernameMap);
+          const usernameMap = await getUsernamesByAddresses(newAddresses);
+          setUsernames(prev => ({ ...prev, ...usernameMap }));
+          // Mark these addresses as fetched
+          newAddresses.forEach(addr => fetchedAddressesRef.current.add(addr));
         } catch (err) {
           console.warn('Failed to fetch usernames:', err);
         }
@@ -91,7 +95,7 @@ export const PendingConnections = ({ session }: PendingConnectionsProps) => {
         clearInterval(intervalRef.current);
       }
     };
-  }, [user?.id, fetchPendingConnections]);
+  }, [user?.id]);
 
   const formatTimeRemaining = (expiresAt: string) => {
     const now = new Date();
