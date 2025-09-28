@@ -25,7 +25,7 @@ const InlineLanguageCarousel = () => {
     }, 2000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [languages.length]);
 
   return (
     <span className="relative inline-block min-w-[120px] h-[1.2em] text-left">
@@ -65,7 +65,7 @@ export default function Home() {
               Together
             </h1>
             <p className="text-2xl text-gray-600 leading-relaxed font-light max-w-lg mx-auto">
-              World proves you're human, and we prove you're <InlineLanguageCarousel />
+              World proves you&apos;re human, and we prove you&apos;re <InlineLanguageCarousel />
             </p>
           </div>
 

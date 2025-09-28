@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { Session } from 'next-auth';
 import { Button, LiveFeedback } from '@worldcoin/mini-apps-ui-kit-react';
 import { apiClient } from '@/lib/api';
-import { AttestTogetherRequest } from '@/types/api';
 import { useProfile } from '@/contexts/ProfileContext';
 
 interface CreateTogetherProps {
@@ -11,21 +10,14 @@ interface CreateTogetherProps {
 }
 
 export const CreateTogether = ({ session }: CreateTogetherProps) => {
-  const { addOptimisticConnection, user } = useProfile();
+  const { user } = useProfile();
   const [partnerUserId, setPartnerUserId] = useState('');
   const [buttonState, setButtonState] = useState<
     'pending' | 'success' | 'failed' | undefined
   >(undefined);
   const [error, setError] = useState<string | null>(null);
 
-  const generateRandomUserId = () => {
-    // Generate a random together ID for testing (between 1 and 1000)
-    return Math.floor(Math.random() * 1000) + 1;
-  };
 
-  const handleRandomUserId = () => {
-    setPartnerUserId(generateRandomUserId().toString());
-  };
 
   const handleCreatePendingConnection = async () => {
     if (!user?.id || !partnerUserId) {
@@ -95,7 +87,7 @@ export const CreateTogether = ({ session }: CreateTogetherProps) => {
       <div className="space-y-6">
         <div className="text-center space-y-12">
           {/* <p className="text-2xl text-gray-700 mb-20">Put your friend's ID below</p> */}
-          <p className="text-2xl text-gray-700" style={{marginBottom: '5rem'}}>Put your friend's ID below</p>
+          <p className="text-2xl text-gray-700" style={{marginBottom: '5rem'}}>Put your friend&apos;s ID below</p>
           <div className="relative">
             {/* Spinning arrows around the input */}
             <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 text-4xl text-red-500 animate-bounce">

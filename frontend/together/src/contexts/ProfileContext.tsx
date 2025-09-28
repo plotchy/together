@@ -39,8 +39,7 @@ export const ProfileProvider = ({ children }: ProfileProviderProps) => {
 
   const addOptimisticConnection = (
     partnerAddress: string, 
-    partnerUsername?: string, 
-    partnerProfileUrl?: string
+    partnerUsername?: string
   ) => {
     if (!profile) return;
 

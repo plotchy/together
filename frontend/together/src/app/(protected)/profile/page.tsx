@@ -1,6 +1,5 @@
 import { auth } from '@/auth';
 import { Page } from '@/components/PageLayout';
-import { UserInfo } from '@/components/UserInfo';
 import { TogetherProfile } from '@/components/TogetherProfile';
 import { PendingConnections } from '@/components/PendingConnections';
 import { ProfileProvider } from '@/contexts/ProfileContext';

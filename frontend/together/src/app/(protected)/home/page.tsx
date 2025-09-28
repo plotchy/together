@@ -1,6 +1,5 @@
 import { auth } from '@/auth';
 import { Page } from '@/components/PageLayout';
-import { CreateTogether } from '@/components/CreateTogether';
 import { ProfileProvider } from '@/contexts/ProfileContext';
 import { HomeContent } from '@/components/HomeContent';
 

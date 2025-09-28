@@ -4,7 +4,6 @@ import {
   CreatePendingConnectionRequest,
   PendingConnectionResponse,
   UserPendingConnectionsResponse,
-  OptimisticConnectionResponse,
   UserOptimisticConnectionsResponse,
   TogetherAttestation, 
   AttestTogetherRequest, 

@@ -11,7 +11,7 @@ interface HomeContentProps {
 }
 
 export const HomeContent = ({ session }: HomeContentProps) => {
-  const { user, setUser } = useProfile();
+  const { setUser } = useProfile();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

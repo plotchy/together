@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Session } from 'next-auth';
 import { apiClient } from '@/lib/api';
 import { UserPendingConnectionsResponse, UserOptimisticConnectionsResponse } from '@/types/api';
@@ -19,7 +19,7 @@ export const PendingConnections = ({ session }: PendingConnectionsProps) => {
   const [error, setError] = useState<string | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const fetchPendingConnections = async () => {
+  const fetchPendingConnections = useCallback(async () => {
     if (!user?.id) return;
 
     try {
@@ -74,7 +74,7 @@ export const PendingConnections = ({ session }: PendingConnectionsProps) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -91,7 +91,7 @@ export const PendingConnections = ({ session }: PendingConnectionsProps) => {
         clearInterval(intervalRef.current);
       }
     };
-  }, [user?.id]);
+  }, [user?.id, fetchPendingConnections]);
 
   const formatTimeRemaining = (expiresAt: string) => {
     const now = new Date();

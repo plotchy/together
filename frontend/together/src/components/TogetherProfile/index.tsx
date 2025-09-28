@@ -1,9 +1,7 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Session } from 'next-auth';
-import { Marble } from '@worldcoin/mini-apps-ui-kit-react';
 import { apiClient } from '@/lib/api';
-import { UserProfile as UserProfileType, ConnectionInfo } from '@/types/api';
 import { useProfile } from '@/contexts/ProfileContext';
 
 interface TogetherProfileProps {
@@ -11,12 +9,12 @@ interface TogetherProfileProps {
 }
 
 export const TogetherProfile = ({ session }: TogetherProfileProps) => {
-  const { profile, setProfile, user, setUser } = useProfile();
+  const { profile, setProfile, setUser } = useProfile();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const fetchData = async (isInitial = false) => {
+  const fetchData = useCallback(async (isInitial = false) => {
     if (!session?.user?.walletAddress) return;
 
     if (isInitial) {
@@ -61,7 +59,7 @@ export const TogetherProfile = ({ session }: TogetherProfileProps) => {
     }
     
     if (isInitial) setLoading(false);
-  };
+  }, [session?.user?.walletAddress, session?.user?.username, session?.user?.profilePictureUrl, setUser, setProfile]);
 
   useEffect(() => {
     if (!session?.user?.walletAddress) return;
@@ -78,7 +76,7 @@ export const TogetherProfile = ({ session }: TogetherProfileProps) => {
         clearInterval(intervalRef.current);
       }
     };
-  }, [session?.user?.walletAddress, session?.user?.username, session?.user?.profilePictureUrl]);
+  }, [session?.user?.walletAddress, session?.user?.username, session?.user?.profilePictureUrl, fetchData]);
 
   if (loading) {
     return (
