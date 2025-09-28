@@ -1,12 +1,13 @@
-import { auth } from '@/auth';
+'use client';
+import { useSession } from 'next-auth/react';
 import { Page } from '@/components/PageLayout';
 import { TogetherProfile } from '@/components/TogetherProfile';
 import { PendingConnections } from '@/components/PendingConnections';
 import { ProfileProvider } from '@/contexts/ProfileContext';
 import { TopBar, Marble } from '@worldcoin/mini-apps-ui-kit-react';
 
-export default async function Profile() {
-  const session = await auth();
+export default function Profile() {
+  const { data: session } = useSession();
 
   return (
     <>

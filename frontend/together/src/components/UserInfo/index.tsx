@@ -1,6 +1,4 @@
 'use client';
-import { CircularIcon, Marble } from '@worldcoin/mini-apps-ui-kit-react';
-import { CheckCircleSolid } from 'iconoir-react';
 import { Session } from 'next-auth';
 
 /**
@@ -11,11 +9,11 @@ interface UserInfoProps {
   session: Session | null;
 }
 
-export const UserInfo = ({ session }: UserInfoProps) => {
+export const UserInfo = ({}: UserInfoProps) => {
 
   return (
-    <div className="flex flex-row items-center justify-start gap-6 rounded-xl w-full border-2 border-purple-400 p-6 bg-white shadow-lg relative overflow-hidden">
-      <div className="absolute top-2 right-2 text-purple-500 animate-spin" style={{animationDuration: '4s'}}>
+    <div>
+      {/* <div className="absolute top-2 right-2 text-purple-500 animate-spin" style={{animationDuration: '4s'}}>
         ⭐
       </div>
       <Marble src={session?.user?.profilePictureUrl} className="w-16 hover:scale-110 transition-transform duration-300" />
@@ -33,7 +31,7 @@ export const UserInfo = ({ session }: UserInfoProps) => {
         <p className="text-sm text-purple-600 font-medium mt-1">
           ✨ Verified Together User ✨
         </p>
-      </div>
+      </div> */}
     </div>
   );
 };

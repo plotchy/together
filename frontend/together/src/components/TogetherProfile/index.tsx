@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Session } from 'next-auth';
 import { apiClient } from '@/lib/api';
 import { useProfile } from '@/contexts/ProfileContext';
@@ -14,55 +14,55 @@ export const TogetherProfile = ({ session }: TogetherProfileProps) => {
   const [error, setError] = useState<string | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const fetchData = useCallback(async (isInitial = false) => {
-    if (!session?.user?.walletAddress) return;
-
-    if (isInitial) {
-      setLoading(true);
-      setError(null);
-    }
-
-    try {
-      // First, get or create the user to get their ID (only on initial load)
-      if (isInitial) {
-        const userResponse = await apiClient.getOrCreateUser(session.user.walletAddress);
-        
-        if (userResponse.error) {
-          setError(userResponse.error);
-          setLoading(false);
-          return;
-        }
-
-        if (userResponse.data) {
-          setUser(userResponse.data);
-        }
-      }
-
-      // Get their profile (always refresh this)
-      const profileResponse = await apiClient.getUserProfile(
-        session.user.walletAddress,
-        {
-          username: session.user.username,
-          profile_picture_url: session.user.profilePictureUrl,
-          limit: 50,
-        }
-      );
-
-      if (profileResponse.error) {
-        if (isInitial) setError(profileResponse.error);
-      } else if (profileResponse.data) {
-        setProfile(profileResponse.data);
-        if (isInitial) setError(null);
-      }
-    } catch (err) {
-      if (isInitial) setError(err instanceof Error ? err.message : 'Unknown error');
-    }
-    
-    if (isInitial) setLoading(false);
-  }, [session?.user?.walletAddress, session?.user?.username, session?.user?.profilePictureUrl, setUser, setProfile]);
-
   useEffect(() => {
     if (!session?.user?.walletAddress) return;
+
+    const fetchData = async (isInitial = false) => {
+      if (!session?.user?.walletAddress) return;
+
+      if (isInitial) {
+        setLoading(true);
+        setError(null);
+      }
+
+      try {
+        // First, get or create the user to get their ID (only on initial load)
+        if (isInitial) {
+          const userResponse = await apiClient.getOrCreateUser(session.user.walletAddress);
+          
+          if (userResponse.error) {
+            setError(userResponse.error);
+            setLoading(false);
+            return;
+          }
+
+          if (userResponse.data) {
+            setUser(userResponse.data);
+          }
+        }
+
+        // Get their profile (always refresh this)
+        const profileResponse = await apiClient.getUserProfile(
+          session.user.walletAddress,
+          {
+            username: session.user.username,
+            profile_picture_url: session.user.profilePictureUrl,
+            limit: 50,
+          }
+        );
+
+        if (profileResponse.error) {
+          if (isInitial) setError(profileResponse.error);
+        } else if (profileResponse.data) {
+          setProfile(profileResponse.data);
+          if (isInitial) setError(null);
+        }
+      } catch (err) {
+        if (isInitial) setError(err instanceof Error ? err.message : 'Unknown error');
+      }
+      
+      if (isInitial) setLoading(false);
+    };
 
     // Initial fetch
     fetchData(true);
@@ -76,7 +76,7 @@ export const TogetherProfile = ({ session }: TogetherProfileProps) => {
         clearInterval(intervalRef.current);
       }
     };
-  }, [session?.user?.walletAddress, session?.user?.username, session?.user?.profilePictureUrl]);
+  }, [session?.user?.walletAddress, session?.user?.username, session?.user?.profilePictureUrl, setUser, setProfile]);
 
   if (loading) {
     return (

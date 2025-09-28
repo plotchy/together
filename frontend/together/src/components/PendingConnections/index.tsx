@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Session } from 'next-auth';
 import { apiClient } from '@/lib/api';
 import { UserPendingConnectionsResponse, UserOptimisticConnectionsResponse } from '@/types/api';
@@ -20,74 +20,75 @@ export const PendingConnections = ({ session }: PendingConnectionsProps) => {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const fetchedAddressesRef = useRef<Set<string>>(new Set());
 
-  const fetchPendingConnections = useCallback(async () => {
-    if (!user?.id) return;
-
-    try {
-      const [pendingResponse, optimisticResponse] = await Promise.all([
-        apiClient.getUserPendingConnections(user.id),
-        apiClient.getUserOptimisticConnections(user.id)
-      ]);
-      
-      if (pendingResponse.error) {
-        setError(pendingResponse.error);
-      } else if (pendingResponse.data) {
-        setPendingConnections(pendingResponse.data);
-        setError(null);
-      }
-
-      if (optimisticResponse.error) {
-        console.warn('Failed to fetch optimistic connections:', optimisticResponse.error);
-      } else if (optimisticResponse.data) {
-        setOptimisticConnections(optimisticResponse.data);
-      }
-
-      // Collect all unique addresses for username fetching
-      const addresses = new Set<string>();
-      if (pendingResponse.data) {
-        pendingResponse.data.outgoing.forEach(conn => {
-          if (conn.from_user_address) addresses.add(conn.from_user_address);
-          if (conn.to_user_address) addresses.add(conn.to_user_address);
-        });
-        pendingResponse.data.incoming.forEach(conn => {
-          if (conn.from_user_address) addresses.add(conn.from_user_address);
-          if (conn.to_user_address) addresses.add(conn.to_user_address);
-        });
-      }
-      if (optimisticResponse.data) {
-        optimisticResponse.data.connections.forEach(conn => {
-          if (conn.user_1_address) addresses.add(conn.user_1_address);
-          if (conn.user_2_address) addresses.add(conn.user_2_address);
-        });
-      }
-
-      // Only fetch usernames for new addresses we haven't seen before
-      const newAddresses = Array.from(addresses).filter(addr => !fetchedAddressesRef.current.has(addr));
-      if (newAddresses.length > 0) {
-        try {
-          const usernameMap = await getUsernamesByAddresses(newAddresses);
-          setUsernames(prev => ({ ...prev, ...usernameMap }));
-          // Mark these addresses as fetched
-          newAddresses.forEach(addr => fetchedAddressesRef.current.add(addr));
-        } catch (err) {
-          console.warn('Failed to fetch usernames:', err);
-        }
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
-  }, [user?.id]);
 
   useEffect(() => {
     if (!user?.id) return;
 
+    const fetch = async () => {
+      if (!user?.id) return;
+
+      try {
+        const [pendingResponse, optimisticResponse] = await Promise.all([
+          apiClient.getUserPendingConnections(user.id),
+          apiClient.getUserOptimisticConnections(user.id)
+        ]);
+        
+        if (pendingResponse.error) {
+          setError(pendingResponse.error);
+        } else if (pendingResponse.data) {
+          setPendingConnections(pendingResponse.data);
+          setError(null);
+        }
+
+        if (optimisticResponse.error) {
+          console.warn('Failed to fetch optimistic connections:', optimisticResponse.error);
+        } else if (optimisticResponse.data) {
+          setOptimisticConnections(optimisticResponse.data);
+        }
+
+        // Collect all unique addresses for username fetching
+        const addresses = new Set<string>();
+        if (pendingResponse.data) {
+          pendingResponse.data.outgoing.forEach(conn => {
+            if (conn.from_user_address) addresses.add(conn.from_user_address);
+            if (conn.to_user_address) addresses.add(conn.to_user_address);
+          });
+          pendingResponse.data.incoming.forEach(conn => {
+            if (conn.from_user_address) addresses.add(conn.from_user_address);
+            if (conn.to_user_address) addresses.add(conn.to_user_address);
+          });
+        }
+        if (optimisticResponse.data) {
+          optimisticResponse.data.connections.forEach(conn => {
+            if (conn.user_1_address) addresses.add(conn.user_1_address);
+            if (conn.user_2_address) addresses.add(conn.user_2_address);
+          });
+        }
+
+        // Only fetch usernames for new addresses we haven't seen before
+        const newAddresses = Array.from(addresses).filter(addr => !fetchedAddressesRef.current.has(addr));
+        if (newAddresses.length > 0) {
+          try {
+            const usernameMap = await getUsernamesByAddresses(newAddresses);
+            setUsernames(prev => ({ ...prev, ...usernameMap }));
+            // Mark these addresses as fetched
+            newAddresses.forEach(addr => fetchedAddressesRef.current.add(addr));
+          } catch (err) {
+            console.warn('Failed to fetch usernames:', err);
+          }
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     // Initial fetch
-    fetchPendingConnections();
+    fetch();
 
     // Set up aggressive polling every 1.5 seconds
-    intervalRef.current = setInterval(fetchPendingConnections, 1500);
+    intervalRef.current = setInterval(fetch, 1500);
 
     // Cleanup interval on unmount
     return () => {
